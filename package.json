@@ -1,0 +1,26 @@
+{
+  "name": "xml-exact",
+  "version": "1.0.0",
+  "description": "XmlExact simplifies working with complex XML documents from JavaScript without the XML suck",
+  "main": "src/xmlexact.js",
+  "dependencies": {
+    "node-expat": "^2.3.13"
+  },
+  "devDependencies": {
+    "chai": "^3.5.0",
+    "mocha": "^3.2.0"
+  },
+  "scripts": {
+    "test": "mocha"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tlbdk/node-xml-exact.git"
+  },
+  "author": "Troels Liebe Bentsen<tlb@nversion.dk>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/tlbdk/node-xml-exact/issues"
+  },
+  "homepage": "https://github.com/tlbdk/node-xml-exact#readme"
+}

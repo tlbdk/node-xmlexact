@@ -36,7 +36,7 @@ class XMLExact {
     }
 
     static generateDefinition(xml) {
-        var obj = _fromXML(xml, null, false, false);
+        let obj = _fromXML(xml, null, false, false);
         return _generateDefinition(obj);
     }
 }
@@ -59,11 +59,8 @@ class Parser {
     }
 }
 
-function _toXML (obj, definition, parentName, indentation, optimizeEmpty, convertTypes, level) {
+function _toXML (obj, definition, parentName, indentation, optimizeEmpty, convertTypes, level = 0) {
     definition = definition ? definition : {};
-    level = level ? level : 0;
-    indentation = indentation ? indentation : 2;
-    optimizeEmpty = optimizeEmpty ? true : false;
 
     let result = "";
     let namespace = "";
@@ -308,9 +305,9 @@ function _fromXML (xml, objectDefinition, inlineAttributes, convertTypes) {
             definitions.pop();
 
             if(names.length < orders.length) {
-                var order = orders.pop();
+                let order = orders.pop();
                 if(order.length > 1) {
-                    var definedOrder = definitions[definitions.length - 1][name + "$order"];
+                    let definedOrder = definitions[definitions.length - 1][name + "$order"];
                     if(!_compareArray(definedOrder, order)) {
                         currentObject[name + "$order"] = order;
                     }

@@ -3,8 +3,8 @@
 const assert = require("chai").assert;
 const XmlExact = require("../src/xmlexact");
 
-describe('XMLUtils#toXML/fromXML mixed inline and definition', function () {
-    it('sample should convert to XML that looks the same as sample_xml', function () {
+describe('XMLUtils#toXML/fromXML mixed inline and definition', () => {
+    it('sample should convert to XML that looks the same as sample_xml', () => {
         const definition = {
             "root$attributes": {"xmlns:myns": "http://tempuri.org"},
             "root": {
@@ -168,7 +168,7 @@ describe('XMLUtils#toXML/fromXML complex object', function () {
   };
 
   //console.log(JSON.stringify(result, null, 2));
-  it('should convert to XML and back to js again', function () {
+  it('should convert to XML and back to js again', () => {
     const xml = XmlExact.toXml(sample_obj, "Envelope", sample_definition);
     assert.isTrue(xml.startsWith("<soap:Envelope"));
     const obj = XmlExact.fromXml(xml, sample_definition);
@@ -203,7 +203,7 @@ describe('XMLUtils#toXML/fromXML simple', function () {
         "</root>"
     ].join("\n");
 
-    it('sample should convert to XML that looks the same as sample_xml', function () {
+    it('sample should convert to XML that looks the same as sample_xml', () => {
         const generated_xml = XmlExact.toXml(sample_obj, "root");
         assert.strictEqual(sample_xml, generated_xml);
     });
@@ -361,7 +361,7 @@ describe('Sample generation', function () {
         assert.deepEqual(sample, expected);
     });
 
-    it('Length and Array', function () {
+    it('Length and Array', () => {
         const definition = {
             complexAllLength$attributes: {
                 "xmlns:myns": "http://tempuri.org",

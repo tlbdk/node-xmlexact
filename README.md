@@ -303,7 +303,7 @@ const sample = xmlExact.generateSample("complexAllLength", definition);
 Output of sample:
 
 ``` JavaScript
-const expected = {
+{
     complexAllLength: {
         tickerSymbola: "          ",
         tickerSymbolb: [" ", " "]

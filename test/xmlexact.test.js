@@ -442,7 +442,7 @@ describe('Test soap envelope', function () {
     });
 });
 
-describe('Test soap envelope', () => {
+describe('XMLBlob', () => {
     const definition = {
         complexAll: {
             xmlBlob$type: "xml",
@@ -463,7 +463,7 @@ describe('Test soap envelope', () => {
         }
     };
 
-    it('to', () => {
+    it('toXml', () => {
         const generatedXml = XmlExact.toXml(obj, "complexAll", definition);
         assert.strictEqual(generatedXml, expectedXml);
     });
@@ -532,5 +532,34 @@ describe("Sample generation", () => {
     it("generateDefinition", () => {
         let generatedSoapDefinition = XmlExact.generateDefinition(soapXml);
         assert.deepEqual(generatedSoapDefinition, expectedSoapDefinition);
+    });
+});
+
+describe('XMLUtils#toXML/fromXML object interface', function () {
+    const definition = {
+        complexAll: {
+            xmlBlob$type: "xml",
+        }
+    };
+
+    const expectedXml = [
+        '<complexAll>',
+        '  <xmlBlob>',
+        '    <myxml>stuff</myxml>',
+        '  </xmlBlob>',
+        '</complexAll>',
+    ].join("\n");
+
+    const obj = {
+        complexAll: {
+            xmlBlob: "<myxml>stuff</myxml>"
+        }
+    };
+
+    let parser = new XmlExact.Parser(definition);
+
+    it('toXml', () => {
+        const generatedXml = parser.toXml(obj, "complexAll", definition);
+        assert.strictEqual(generatedXml, expectedXml);
     });
 });

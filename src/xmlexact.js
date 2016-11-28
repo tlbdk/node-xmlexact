@@ -14,52 +14,51 @@ const defaultFromXmlOptions = {
     convertTypes: true
 };
 
-class XMLExact {
-    static Parser() {
-        return Parser;
-    }
+function toXml(obj, rootName, definition = {}, options = {}) {
+    let args = Object.assign({}, defaultToXmlOptions, options);
+    return _toXml(obj, definition, rootName, args.indentation, args.optimizeEmpty, args.convertTypes);
+}
 
-    static toXml(obj, rootName, definition = {}, options = {}) {
-        let args = Object.assign({}, defaultToXmlOptions, options);
-        return _toXML(obj, definition, rootName, args.indentation, args.optimizeEmpty, args.convertTypes);
-    }
+function fromXml(xml, definition = {}, options = {}) {
+    let args = Object.assign({}, defaultFromXmlOptions, options);
+    return _fromXml(xml, definition, args.inlineAttributes, args.convertTypes);
+}
 
-    static fromXml(xml, definition = {}, options = {}) {
-        let args = Object.assign({}, defaultFromXmlOptions, options);
-        return _fromXML(xml, definition, args.inlineAttributes, args.convertTypes);
+function generateSample(rootName, definition) {
+    return {
+        [rootName]: _generateSample(definition[rootName], rootName)
     }
+}
 
-    static generateSample(rootName, definition) {
-        return {
-            [rootName]: _generateSample(definition[rootName], rootName)
-        };
-    }
-
-    static generateDefinition(xml) {
-        let obj = _fromXML(xml, null, false, false);
-        return _generateDefinition(obj);
-    }
+function generateDefinition(xml) {
+    let obj = _fromXml(xml, null, false, false);
+    return _generateDefinition(obj);
 }
 
 class Parser {
-    constructor(definition) {
+    constructor(definition, options = {}) {
         this._definition = definition;
+        this._options = options;
     }
 
-    toXML(obj, rootName, options) {
-        return XMLExact.toXml(obj, rootName, this._definition, options);
+    toXml(obj, rootName) {
+        return toXml(obj, rootName, this._definition, this._options);
     }
 
-    fromXML(xml, options) {
-        return XMLExact.fromXml(xml, this._definition, options);
+    fromXml(xml, options) {
+        return fromXml(xml, this._definition, this._options);
     }
 
     generateSample(rootName) {
-        return XMLExact.generateSample(this._definition, rootName)
+        return generateSample(this._definition, this._options);
+    }
+
+    generateDefinition(xml) {
+        return generateDefinition(xml);
     }
 }
 
-function _toXML (obj, definition, parentName, indentation, optimizeEmpty, convertTypes, level = 0) {
+function _toXml (obj, definition, parentName, indentation, optimizeEmpty, convertTypes, level = 0) {
     definition = definition ? definition : {};
 
     let result = "";
@@ -99,7 +98,7 @@ function _toXML (obj, definition, parentName, indentation, optimizeEmpty, conver
 
     if(Array.isArray(obj)) {
         obj.forEach(function(value) {
-            result += _toXML(value, definition, namespace + parentName, indentation, optimizeEmpty, convertTypes, level);
+            result += _toXml(value, definition, namespace + parentName, indentation, optimizeEmpty, convertTypes, level);
         });
 
     } else if(typeof obj === "object") {
@@ -125,7 +124,7 @@ function _toXML (obj, definition, parentName, indentation, optimizeEmpty, conver
                 // Skip definition information such as order
 
             } else {
-                subResult += _toXML(obj[key], definition[parentName], key, indentation, optimizeEmpty, convertTypes, level + 1);
+                subResult += _toXml(obj[key], definition[parentName], key, indentation, optimizeEmpty, convertTypes, level + 1);
             }
         });
 
@@ -184,7 +183,7 @@ function escapeValue(value) {
     }
 }
 
-function _fromXML (xml, objectDefinition, inlineAttributes, convertTypes) {
+function _fromXml (xml, objectDefinition, inlineAttributes, convertTypes) {
     const definitions = [objectDefinition || {}];
 
     const parser = new expat.Parser('UTF-8');
@@ -501,4 +500,10 @@ function _compareArray(array1, array2) {
     return true;
 }
 
-module.exports = XMLExact;
+module.exports = {
+    toXml,
+    fromXml,
+    generateDefinition,
+    generateSample,
+    Parser
+};

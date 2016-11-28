@@ -50,7 +50,7 @@ parses will be very welcome)
 ## Example of usage
 
 ``` JavaScript
-var XmlExact = require('xml-exact');
+var xmlExact = require('xml-exact');
 
 var definition = {
   Envelope$namespace: "soap",
@@ -89,10 +89,10 @@ var obj = {
 };
 
 // Generate XML and with names spaces, converting types and ensure element order
-var xml = XmlExact.toXML(obj, "Envelope", definition);
+var xml = xmlExact.toXml(obj, "Envelope", definition);
 
 // Parse xml reconstructing the javascript object with the right types
-var parsedObj = XmlExact.fromXML(xml, definition);
+var parsedObj = xmlExact.fromXml(xml, definition);
 ```
 
 Output of xml:
@@ -168,6 +168,12 @@ Parameters:
   * indentation: Set indentation level for xml output, default is 2
   * convertTypes: Convert types based on the information in the definition, default is true
   * inlineAttributes: Inline attributes in the object by prepending $, default is true
+  
+### generateDefinition(xml, [type, namespaces]);
+
+* xml: XML document (XML sample or XSD)
+* type: "xml", "xsd"
+* namespaces: Namespaces to inject root
 
 ## Type conversion
 
@@ -191,10 +197,10 @@ const obj = {
 };
 
 // Generate XML
-const xml = XmlExact.toXml(obj, "complexAll", definition);
+const xml = xmlExact.toXml(obj, "complexAll", definition);
 
 // Parse xml reconstructing the javascript object with the right types
-const parsedObj = XmlExact.fromXml(xml, definition);
+const parsedObj = xmlExact.fromXml(xml, definition);
 ```
 
 Output of xml:
@@ -213,7 +219,7 @@ Output of xml:
 The generator does some guess work to 
 
 ``` JavaScript
-let generatedDefinition = XmlExact.generateDefinition(sampleXml);
+let generatedDefinition = xmlExact.generateDefinition(sampleXml);
 ```
 
 Sample XML:
@@ -291,7 +297,7 @@ const definition = {
     }
 };
 
-const sample = XmlExact.generateSample("complexAllLength", definition);
+const sample = xmlExact.generateSample("complexAllLength", definition);
 ```
 
 Output of sample:

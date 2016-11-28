@@ -470,7 +470,7 @@ describe('XMLBlob', () => {
 });
 
 
-describe("Sample generation", () => {
+describe("XML definition generation", () => {
     const soapXml = [
         '<soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope/" soap:encodingStyle="http://www.w3.org/2003/05/soap-encoding">',
         '  <soap:Header />',

@@ -26,7 +26,7 @@ function fromXml(xml, definition = {}, options = {}) {
 
 function generateSample(rootName, definition) {
     return {
-        [rootName]: _generateSample(definition[rootName], rootName)
+        [rootName]: _generateSample(definition[rootName])
     }
 }
 
@@ -728,7 +728,7 @@ function _namespaceLookup(name, namespaces) {
     return result;
 }
 
-function _generateSample(definition, level = 0) {
+function _generateSample(definition) {
     let result = {};
 
     Object.keys(definition).forEach(function (key) {
@@ -745,7 +745,7 @@ function _generateSample(definition, level = 0) {
             }
 
         } else if(key.indexOf("$") === -1 && typeof definition[key] === 'object') {
-            result[key] = _generateSample(definition[key], key, level + 1);
+            result[key] = _generateSample(definition[key]);
         }
     });
 

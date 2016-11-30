@@ -42,8 +42,8 @@ function generateDefinition(xmlOrObj, type = "xml", namespaces = {}) {
                 "simpleType$type": [],
                 "complexType$type": [],
             }
-        }, true, false) : xmlOrObj;
-        return _generateDefinitionXsd(obj.schema, namespaces);
+        }, true, false).schema : xmlOrObj;
+        return _generateDefinitionXsd(obj, namespaces);
 
     } else {
         throw new Error("Unknown type '" + type + "'");

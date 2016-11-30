@@ -97,7 +97,7 @@ function _toXml (obj, definition, parentName, indentation, optimizeEmpty, conver
         obj = obj[parentName];
     }
 
-    if(typeof obj === undefined || obj === null) {
+    if(obj === undefined || obj === null) {
         // TODO: Handle null types
         return result;
     }

@@ -182,7 +182,7 @@ function _toXml (obj, definition, parentName, indentation, optimizeEmpty, conver
 function escapeValue(value) {
     // https://stackoverflow.com/questions/1091945/what-characters-do-i-need-to-escape-in-xml-documents/1091953
     if(typeof value === 'string'){
-        return value.replace(/((?:&(?!(?:apos|quot|[gl]t|amp);))|(?:^<!\[CDATA\[.+?]]>)|[<>'"])/g, function(match, p1) {
+        return value.replace(/((?:&(?!(?:apos|quot|[gl]t|amp);))|(?:^<!\[CDATA\[.+?\]\]>)|[<>'"])/g, function(match, p1) {
             switch(p1) {
                 case '>': return '&gt;';
                 case '<': return '&lt;';

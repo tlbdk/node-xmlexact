@@ -60,7 +60,7 @@ class Parser {
         return toXml(obj, rootName, this._definition, this._options);
     }
 
-    fromXml(xml, options) {
+    fromXml(xml) {
         return fromXml(xml, this._definition, this._options);
     }
 

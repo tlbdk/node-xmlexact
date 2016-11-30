@@ -350,7 +350,7 @@ function _fromXml (xml, objectDefinition, inlineAttributes, convertTypes) {
                         } else if(['byte', 'int', 'integer', 'long', 'negativeInteger', 'nonNegativeInteger',
                                 'nonPositiveInteger', 'short', 'unsignedByte', 'unsignedInt', 'unsignedLong',
                                 'unsignedShort'].indexOf(currentType) > -1) {
-                            currentObject[name] = parseInt(currentValue);
+                            currentObject[name] = parseInt(currentValue, 10);
 
                         } else if(currentType === "base64Binary") {
                             currentObject[name] = Buffer.from(currentValue, 'base64');
@@ -603,15 +603,15 @@ function _elementToDefinition(xsdType, element, targetNamespace, elementFormQual
                                 type = subElement.restriction.$base;
 
                                 if(subElement.restriction.length) {
-                                    maxLength = parseInt(subElement.restriction.length.$value);
+                                    maxLength = parseInt(subElement.restriction.length.$value, 10);
                                     minLength = maxLength;
 
                                 } else {
                                     if(subElement.restriction.maxLength) {
-                                        maxLength = parseInt(subElement.restriction.maxLength.$value);
+                                        maxLength = parseInt(subElement.restriction.maxLength.$value, 10);
                                     }
                                     if(subElement.restriction.minLength) {
-                                        minLength = parseInt(subElement.restriction.minLength.$value);
+                                        minLength = parseInt(subElement.restriction.minLength.$value, 10);
                                     }
                                 }
 
@@ -658,8 +658,8 @@ function _elementToDefinition(xsdType, element, targetNamespace, elementFormQual
             result[element.$name + "$namespace"] = namespaceToAlias[targetNamespace].replace(/^xmlns:/, '');
         }
 
-        let maxOccurs = parseInt(element.$maxOccurs ===  "unbounded" ? Number.MAX_VALUE : (element.$maxOccurs || 0));
-        let minOccurs = parseInt(element.$minOccurs || 0);
+        let maxOccurs = parseInt(element.$maxOccurs ===  "unbounded" ? Number.MAX_VALUE : (element.$maxOccurs || 0), 10);
+        let minOccurs = parseInt(element.$minOccurs || 0, 10);
 
         // Check if this type is an array
         if (maxOccurs > 1) {

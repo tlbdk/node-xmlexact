@@ -627,7 +627,6 @@ function _elementToDefinition(xsdType, element, targetNamespace, elementFormQual
                         }
 
                     } else {
-                        console.log(JSON.stringify(element, null, 2));
                         throw new Error("Could not find type '" + typeNamespace.name + "' in namespace '" + typeNamespace.ns + "'");
                     }
                 }

@@ -29,7 +29,7 @@ describe("Validation", () => {
     };
 
     it("toXml", () => {
-        let generatedXml = xmlExact.toXml(validObj1, "complexAll", definition);
+        let generatedXml = xmlExact.toXml(validObj1, "complexAll", definition, { validation: true });
         assert.isNotNull(generatedXml);
     });
 });

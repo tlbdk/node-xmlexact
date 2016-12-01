@@ -211,27 +211,33 @@ describe('XMLUtils#toXML/fromXML simple', function () {
 
 describe('Binary encoding', function () {
     const definition = {
+        complexAll$attributes: {
+            base64Binary$type: "base64Binary",
+            hexBinary$type: "hexBinary"
+        },
         complexAll: {
-            tickerSymbola$type: "base64Binary",
-            tickerSymbolb$type: "hexBinary",
+            base64Binary$type: "base64Binary",
+            hexBinary$type: "hexBinary"
         }
     };
 
     const obj = {
         complexAll: {
-            tickerSymbola: Buffer.from("ÆØÅ"),
-            tickerSymbolb: Buffer.from("ÅØÆ")
+            $base64Binary: Buffer.from("ÆØÅ"),
+            $hexBinary: Buffer.from("ÅØÆ"),
+            base64Binary: Buffer.from("ÆØÅ"),
+            hexBinary: Buffer.from("ÅØÆ")
         },
         complexAll$order: [
-            "tickerSymbola",
-            "tickerSymbolb"
+            "base64Binary",
+            "hexBinary"
         ]
     };
 
     const xml = [
-        "<complexAll>",
-        "  <tickerSymbola>w4bDmMOF</tickerSymbola>",
-        "  <tickerSymbolb>c385c398c386</tickerSymbolb>",
+        '<complexAll base64Binary="w4bDmMOF" hexBinary="c385c398c386">',
+        "  <base64Binary>w4bDmMOF</base64Binary>",
+        "  <hexBinary>c385c398c386</hexBinary>",
         "</complexAll>",
     ].join("\n");
 
@@ -247,6 +253,12 @@ describe('Binary encoding', function () {
 
 describe('Types', function () {
     const definition = {
+        complexAll$attributes: {
+            boolean1$type: "boolean",
+            boolean2$type: "boolean",
+            float$type: "float",
+            int$type: "int",
+        },
         complexAll: {
             boolean1$type: "boolean",
             boolean2$type: "boolean",
@@ -256,6 +268,10 @@ describe('Types', function () {
     };
     const obj = {
         complexAll: {
+            $boolean1: true,
+            $boolean2: false,
+            $float: 1.1,
+            $int: 1,
             boolean1: true,
             boolean2: false,
             float: 1.1,
@@ -270,7 +286,7 @@ describe('Types', function () {
     };
 
     const xml = [
-        "<complexAll>",
+        '<complexAll boolean1="true" boolean2="false" float="1.1" int="1">',
         "  <boolean1>true</boolean1>",
         "  <boolean2>false</boolean2>",
         "  <float>1.1</float>",

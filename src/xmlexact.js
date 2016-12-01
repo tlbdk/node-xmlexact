@@ -5,7 +5,8 @@ const expat = require('node-expat');
 const defaultToXmlOptions = {
     indentation: 2,
     optimizeEmpty: true,
-    convertTypes: true
+    convertTypes: true,
+    validation: false
 };
 
 const defaultFromXmlOptions = {
@@ -145,8 +146,20 @@ function _toXml (obj, definition, parentName, indentation, optimizeEmpty, conver
 
         // Generate start and end tag
         result += whitespace + "<" + namespace +  parentName;
-        Object.getOwnPropertyNames(attributes).forEach(function(key){
-            result += " " + key + '="' + attributes[key] + '"';
+        Object.keys(attributes).forEach((key) => {
+            if(key.indexOf("$") === -1) {
+                let attributeValue = attributes[key];
+                let attributeType = attributes[key + "$type"];
+                if(convertTypes && attributeType) {
+                    if(attributeType === "base64Binary") {
+                        obj = Buffer.from(attributeValue).toString('base64');
+
+                    } else if(attributeType === "hexBinary") {
+                        obj = Buffer.from(attributeValue).toString('hex');
+                    }
+                }
+                result += " " + key + '="' + escapeValue(attributeValue) + '"';
+            }
         });
 
         if(!obj["$"] && subResult === "" && optimizeEmpty) {
@@ -285,6 +298,12 @@ function _fromXml (xml, objectDefinition, inlineAttributes, convertTypes) {
 
             if(value === definitionValue) {
                 delete attributes[key];
+
+            } else {
+                let attributeType = definitionAttributes[key + "$type"];
+                if(attributeType){
+                    attributes[key] = _convertXsdType(attributeType, attributes[key]);
+                }
             }
         });
 
@@ -388,26 +407,7 @@ function _fromXml (xml, objectDefinition, inlineAttributes, convertTypes) {
             } else if(typeof currentObject[name] === "object") {
                 if(Object.getOwnPropertyNames(currentObject[name]).length === 0) { // Move to utility function
                     if(convertTypes) {
-                        if(currentType === "boolean") {
-                            currentObject[name] = currentValue === 'true';
-
-                        } else if(['decimal', 'double', 'float'].indexOf(currentType) > -1) {
-                            currentObject[name] = parseFloat(currentValue);
-
-                        } else if(['byte', 'int', 'integer', 'long', 'negativeInteger', 'nonNegativeInteger',
-                                'nonPositiveInteger', 'short', 'unsignedByte', 'unsignedInt', 'unsignedLong',
-                                'unsignedShort'].indexOf(currentType) > -1) {
-                            currentObject[name] = parseInt(currentValue, 10);
-
-                        } else if(currentType === "base64Binary") {
-                            currentObject[name] = Buffer.from(currentValue, 'base64');
-
-                        } else if(currentType === "hexBinary") {
-                            currentObject[name] = Buffer.from(currentValue, 'hex');
-
-                        } else {
-                            currentObject[name] = currentValue;
-                        }
+                        currentObject[name] = _convertXsdType(currentType, currentValue);
 
                     } else {
                         currentObject[name] = currentValue; // TODO: Handle inline attributes
@@ -430,6 +430,29 @@ function _fromXml (xml, objectDefinition, inlineAttributes, convertTypes) {
     }
 
     return result;
+}
+
+function _convertXsdType(type, value) {
+    if(type === "boolean") {
+        return value === 'true';
+
+    } else if(['decimal', 'double', 'float'].indexOf(type) > -1) {
+        return parseFloat(value);
+
+    } else if(['byte', 'int', 'integer', 'long', 'negativeInteger', 'nonNegativeInteger',
+            'nonPositiveInteger', 'short', 'unsignedByte', 'unsignedInt', 'unsignedLong',
+            'unsignedShort'].indexOf(type) > -1) {
+        return parseInt(value, 10);
+
+    } else if(type === "base64Binary") {
+        return Buffer.from(value, 'base64');
+
+    } else if(type === "hexBinary") {
+        return Buffer.from(value, 'hex');
+
+    } else {
+        return value;
+    }
 }
 
 function _generateDefinitionXml(obj) {

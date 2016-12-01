@@ -431,6 +431,17 @@ describe('Test soap envelope', function () {
         '</soap:Envelope>',
     ].join("\n");
 
+    const expectedSoapOtherNsAliasXml = [
+        '<soapenv:Envelope xmlns:soapenv="http://www.w3.org/2003/05/soap-envelope/" soapenv:encodingStyle="http://www.w3.org/2003/05/soap-encoding">',
+        '  <soapenv:Header />',
+        '  <soapenv:Body>',
+        '    <complexAll>',
+        '      <boolean1>true</boolean1>',
+        '    </complexAll>',
+        '  </soapenv:Body>',
+        '</soapenv:Envelope>',
+    ].join("\n");
+
     it('to', () => {
         const generatedSoapXml = XmlExact.toXml(expectedSoapObj, "Envelope", soapDefinition);
         assert.strictEqual(generatedSoapXml, expectedSoapXml);
@@ -440,6 +451,12 @@ describe('Test soap envelope', function () {
         const generatedSoapObj = XmlExact.fromXml(expectedSoapXml, soapDefinition);
         assert.deepEqual(generatedSoapObj, expectedSoapObj);
     });
+
+    it('fromNsAliasMapping', () => {
+        const generatedSoapObj = XmlExact.fromXml(expectedSoapOtherNsAliasXml, soapDefinition);
+        assert.deepEqual(generatedSoapObj, expectedSoapObj);
+    });
+
 });
 
 describe('XMLBlob', () => {

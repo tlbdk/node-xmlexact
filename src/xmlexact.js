@@ -210,39 +210,86 @@ function _fromXml (xml, objectDefinition, inlineAttributes, convertTypes) {
     let names = [];
 
     let orders = [];
+    let namespaces = {}; // { nsAlias: url }
+    let definitionNamespaces = {}; // { nsAlias: url }
+    let definitionNamespaceUrls = {}; // { url: nsAlias }
 
     parser.on('startElement', function(name, attributes) {
-        // TODO: Handle namespaces in a nice way
         // Parse namespace
-        let ns = name.split(":");
-        if(ns.length > 1) {
-            name = ns[1];
-            ns = ns[0];
+        let nsAlias = name.split(":");
+        if(nsAlias.length > 1) {
+            name = nsAlias[1];
+            nsAlias = nsAlias[0];
         } else {
-            ns = undefined;
+            nsAlias = undefined;
         }
 
         const definition = definitions[definitions.length - 1];
+        let definitionAttributes = definition[name + "$attributes"] || {};
+
         currentType = definition[name + "$type"];
         let nextObject = {};
         currentValue = ""; // TODO: Create $t value on object if this has data
 
-        if(ns && definition[name + "$namespace"] !== ns) {
+        // TODO: Simplify namespace handling by only working with urls
+
+        // Extract namespaces for alias lookup
+        Object.keys(attributes).forEach(function(key) {
+            let ns = key.match(/^xmlns:(.+)$/);
+            if (ns) {
+                namespaces[ns[1]] = attributes[key];
+            }
+        });
+        Object.keys(definitionAttributes).forEach(function(key) {
+            let ns = key.match(/^xmlns:(.+)$/);
+            if (ns) {
+                definitionNamespaceUrls[definitionAttributes[key]] = ns[1];
+                definitionNamespaces[ns[1]] = definitionAttributes[key];
+            }
+        });
+
+        let nsUrl = namespaces[nsAlias];
+        let definitionNsUrl = definitionNamespaces[definition[name + "$namespace"]];
+
+        if(nsAlias && nsUrl != definitionNsUrl) {
             if(inlineAttributes) {
-                nextObject["namespace" + "$"] = ns;
+                nextObject["namespace" + "$"] = nsAlias;
 
             } else {
-                currentObject[name + "$namespace"] = ns;
+                currentObject[name + "$namespace"] = nsAlias;
             }
         }
 
         // Filter attributes so we only include ones not in definition
-        Object.keys(definition[name + "$attributes"] || {}).forEach((attribute) => {
-            delete attributes[attribute];
+        Object.keys(attributes).forEach((key) => {
+            let value = attributes[key];
+            let definitionValue = "";
+            let nameNsAlias = key.split(":");
+            if(nameNsAlias.length > 1) {
+                if(nameNsAlias[0] === "xmlns") {
+                    let definitionNsAlias = definitionNamespaceUrls[value];
+                    if(definitionNsAlias) {
+                        definitionValue = value;
+                    }
+                } else {
+                    let nsUrl = namespaces[nameNsAlias[0]];
+                    let definitionNsAlias = definitionNamespaceUrls[nsUrl];
+                    if(definitionNsAlias) {
+                        definitionValue = definitionAttributes[definitionNsAlias + ":" + nameNsAlias[1]];
+                    }
+                }
+
+            } else {
+                definitionValue = definitionAttributes[key];
+            }
+
+            if(value === definitionValue) {
+                delete attributes[key];
+            }
         });
 
         // Handle attributes
-        if(Object.getOwnPropertyNames(attributes).length > 0) {
+        if(Object.keys(attributes).length > 0) {
             if(inlineAttributes) {
                 Object.keys(attributes).forEach(function(key){
                     nextObject["$" + key] = attributes[key];

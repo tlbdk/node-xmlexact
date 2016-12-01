@@ -8,10 +8,11 @@
   },
   "devDependencies": {
     "chai": "^3.5.0",
+    "istanbul": "^0.4.5",
     "mocha": "^3.2.0"
   },
   "scripts": {
-    "test": "mocha"
+    "test": "istanbul test _mocha -- -R spec"
   },
   "repository": {
     "type": "git",

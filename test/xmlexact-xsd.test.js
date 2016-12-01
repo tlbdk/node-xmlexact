@@ -1,7 +1,7 @@
 /*eslint-env node, mocha */
 
 const assert = require("chai").assert;
-const XmlExact = require("../src/xmlexact");
+const xmlExact = require("../src/xmlexact");
 
 describe("XSD definition generation", () => {
     it("Most used XSD types", () => {
@@ -98,7 +98,7 @@ describe("XSD definition generation", () => {
             refrencedSimpleRestriction$namespace: "myns",
         };
 
-        let generatedXsdDefinition = XmlExact.generateDefinition(xsdXml, "xsd", { "xmlns:myns": "http://tempuri.org" });
+        let generatedXsdDefinition = xmlExact.generateDefinition(xsdXml, "xsd", { "xmlns:myns": "http://tempuri.org" });
         assert.deepEqual(generatedXsdDefinition, expectedXsdDefinition);
     });
 
@@ -123,7 +123,7 @@ describe("XSD definition generation", () => {
             MyElement$length: [0, 8],
         };
 
-        let generatedXsdDefinition = XmlExact.generateDefinition(xsdXml, "xsd", { "xmlns:myns": "http://tempuri.org" });
+        let generatedXsdDefinition = xmlExact.generateDefinition(xsdXml, "xsd", { "xmlns:myns": "http://tempuri.org" });
         assert.deepEqual(generatedXsdDefinition, expectedXsdDefinition);
     });
 
@@ -156,7 +156,7 @@ describe("XSD definition generation", () => {
             MyElement$order: ["tickerSymbol1", "tickerSymbol2"]
         };
 
-        let generatedXsdDefinition = XmlExact.generateDefinition(xsdXml, "xsd", { "xmlns:myns": "http://tempuri.org" });
+        let generatedXsdDefinition = xmlExact.generateDefinition(xsdXml, "xsd", { "xmlns:myns": "http://tempuri.org" });
         assert.deepEqual(generatedXsdDefinition, expectedXsdDefinition);
     });
 });

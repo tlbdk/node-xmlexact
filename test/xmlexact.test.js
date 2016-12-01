@@ -217,7 +217,8 @@ describe('Binary encoding', function () {
         },
         complexAll: {
             base64Binary$type: "base64Binary",
-            hexBinary$type: "hexBinary"
+            hexBinary$type: "hexBinary",
+            base64BinaryWithAttribute$type: "base64Binary"
         }
     };
 
@@ -226,11 +227,16 @@ describe('Binary encoding', function () {
             $base64Binary: Buffer.from("ÆØÅ"),
             $hexBinary: Buffer.from("ÅØÆ"),
             base64Binary: Buffer.from("ÆØÅ"),
-            hexBinary: Buffer.from("ÅØÆ")
+            hexBinary: Buffer.from("ÅØÆ"),
+            base64BinaryWithAttribute: {
+                $: Buffer.from("ÆØÅ"),
+                $test: "hello"
+            }
         },
         complexAll$order: [
             "base64Binary",
-            "hexBinary"
+            "hexBinary",
+            "base64BinaryWithAttribute"
         ]
     };
 
@@ -238,6 +244,7 @@ describe('Binary encoding', function () {
         '<complexAll base64Binary="w4bDmMOF" hexBinary="c385c398c386">',
         "  <base64Binary>w4bDmMOF</base64Binary>",
         "  <hexBinary>c385c398c386</hexBinary>",
+        '  <base64BinaryWithAttribute test="hello">w4bDmMOF</base64BinaryWithAttribute>',
         "</complexAll>",
     ].join("\n");
 
@@ -264,7 +271,20 @@ describe('Types', function () {
             boolean2$type: "boolean",
             float$type: "float",
             int$type: "int",
+            intWithAttribute$type: "int",
+            intWithDefinedAttribute$type: "int",
+            intWithDefinedAttribute$attributes: {
+                test: "hello"
+            }
         },
+        complexAll$order: [
+            "boolean1",
+            "boolean2",
+            "float",
+            "int",
+            "intWithAttribute",
+            "intWithDefinedAttribute"
+        ]
     };
     const obj = {
         complexAll: {
@@ -276,13 +296,12 @@ describe('Types', function () {
             boolean2: false,
             float: 1.1,
             int: 1,
-        },
-        complexAll$order: [
-            "boolean1",
-            "boolean2",
-            "float",
-            "int"
-        ]
+            intWithAttribute: {
+                $: 1,
+                $test: "hello"
+            },
+            intWithDefinedAttribute: 1,
+        }
     };
 
     const xml = [
@@ -290,7 +309,9 @@ describe('Types', function () {
         "  <boolean1>true</boolean1>",
         "  <boolean2>false</boolean2>",
         "  <float>1.1</float>",
-        "  <int>1</int>",
+        '  <int>1</int>',
+        '  <intWithAttribute test="hello">1</intWithAttribute>',
+        '  <intWithDefinedAttribute test="hello">1</intWithDefinedAttribute>',
         "</complexAll>",
     ].join("\n");
 

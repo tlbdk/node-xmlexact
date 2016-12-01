@@ -87,9 +87,23 @@ function _toXml (obj, definition, parentName, indentation, optimizeEmpty, conver
     } else if(definition[parentName + "$namespace"]) {
         namespace = definition[parentName + "$namespace"] + ":";
     }
-    let attributes = Object.assign({}, definition[parentName + "$attributes"] || {});
     let order = obj[parentName + "$order"] || definition[parentName + "$order"];
     let type = obj[parentName + "$type"] || definition[parentName + "$type"];
+
+    let attributes = {};
+    let definitionAttributes = (definition[parentName + "$attributes"] || {});
+    Object.keys(definitionAttributes).forEach((key) => {
+        if(key.indexOf("$") === -1) {
+            let attributeValue = definitionAttributes[key];
+            if(convertTypes) {
+                let attributeType = definitionAttributes[key + "$type"];
+                if(attributeType) {
+                    attributeValue = _convertToXsdType(attributeType, attributeValue);
+                }
+            }
+            attributes[key] = attributeValue;
+        }
+    });
 
     let whitespace = " ".repeat(level * indentation);
 
@@ -104,12 +118,7 @@ function _toXml (obj, definition, parentName, indentation, optimizeEmpty, conver
     }
 
     if(convertTypes) {
-        if(type === "base64Binary") {
-            obj = Buffer.from(obj).toString('base64');
-
-        } else if(type === "hexBinary") {
-            obj = Buffer.from(obj).toString('hex');
-        }
+        obj = _convertToXsdType(type, obj);
     }
 
     if(Array.isArray(obj)) {
@@ -120,21 +129,43 @@ function _toXml (obj, definition, parentName, indentation, optimizeEmpty, conver
     } else if(typeof obj === "object") {
         let keys = Object.getOwnPropertyNames(obj);
         if(order) {
-            keys = keys.sort(function(a, b) {
-                return order.indexOf(a) - order.indexOf(b);
+            keys = keys.sort((a, b) => {
+                let aOffset = order.indexOf(a);
+                let bOffset = order.indexOf(b);
+                if(aOffset == -1 && bOffset > 0) {
+                    return 1;
+                }
+                if(bOffset == -1 && aOffset > 0) {
+                    return -1;
+                }
+                return aOffset - bOffset;
             });
         }
 
         let subResult = "";
         keys.forEach(function(key) {
             if(key === "$") { // TODO: Support data before and after
-                subResult += obj[key];
+                let objValue = obj[key];
+                if(convertTypes) {
+                    let attributeType = definition[parentName + "$type"];
+                    if (attributeType) {
+                        objValue = _convertToXsdType(attributeType, objValue);
+                    }
+                }
+                subResult += objValue;
 
             } else if(key === "namespace$") {
                 namespace = obj[key] + ":";
 
             } else if(key.indexOf("$") == 0) {
-                attributes[key.substr(1)] = obj[key];
+                let attributeValue = obj[key];
+                if(convertTypes) {
+                    let attributeType = definitionAttributes[key.substr(1) + "$type"];
+                    if(attributeType) {
+                        attributeValue = _convertToXsdType(attributeType, attributeValue);
+                    }
+                }
+                attributes[key.substr(1)] = attributeValue;
 
             } else if(key.indexOf("$") > 0) {
                 // Skip definition information such as order
@@ -147,19 +178,7 @@ function _toXml (obj, definition, parentName, indentation, optimizeEmpty, conver
         // Generate start and end tag
         result += whitespace + "<" + namespace +  parentName;
         Object.keys(attributes).forEach((key) => {
-            if(key.indexOf("$") === -1) {
-                let attributeValue = attributes[key];
-                let attributeType = attributes[key + "$type"];
-                if(convertTypes && attributeType) {
-                    if(attributeType === "base64Binary") {
-                        obj = Buffer.from(attributeValue).toString('base64');
-
-                    } else if(attributeType === "hexBinary") {
-                        obj = Buffer.from(attributeValue).toString('hex');
-                    }
-                }
-                result += " " + key + '="' + escapeValue(attributeValue) + '"';
-            }
+            result += " " + key + '="' + escapeValue(attributes[key]) + '"';
         });
 
         if(!obj["$"] && subResult === "" && optimizeEmpty) {
@@ -302,7 +321,7 @@ function _fromXml (xml, objectDefinition, inlineAttributes, convertTypes) {
             } else {
                 let attributeType = definitionAttributes[key + "$type"];
                 if(attributeType){
-                    attributes[key] = _convertXsdType(attributeType, attributes[key]);
+                    attributes[key] = _convertFromXsdType(attributeType, attributes[key]);
                 }
             }
         });
@@ -407,14 +426,18 @@ function _fromXml (xml, objectDefinition, inlineAttributes, convertTypes) {
             } else if(typeof currentObject[name] === "object") {
                 if(Object.getOwnPropertyNames(currentObject[name]).length === 0) { // Move to utility function
                     if(convertTypes) {
-                        currentObject[name] = _convertXsdType(currentType, currentValue);
+                        currentObject[name] = _convertFromXsdType(currentType, currentValue);
 
                     } else {
                         currentObject[name] = currentValue; // TODO: Handle inline attributes
                     }
 
                 } else if(currentValue != '') {
-                    currentObject[name].$ = currentValue;
+                    if(convertTypes) {
+                        currentObject[name].$ = _convertFromXsdType(currentType, currentValue);
+                    } else {
+                        currentObject[name].$ = currentValue;
+                    }
                     // TODO: Save "<tag>text<subtag>" type text
                 }
             }
@@ -432,7 +455,22 @@ function _fromXml (xml, objectDefinition, inlineAttributes, convertTypes) {
     return result;
 }
 
-function _convertXsdType(type, value) {
+function _convertToXsdType(type, value) {
+    if(typeof value === "object" && value.hasOwnProperty("$")) { // Support { key: { $: "", $att: "" } }
+        return value;
+
+    } else if(type === "base64Binary") {
+        return Buffer.from(value).toString('base64');
+
+    } else if(type === "hexBinary") {
+        return Buffer.from(value).toString('hex');
+
+    } else {
+        return value;
+    }
+}
+
+function _convertFromXsdType(type, value) {
     if(type === "boolean") {
         return value === 'true';
 
@@ -806,11 +844,11 @@ function _generateSample(definition) {
             let length = definition[keyName + "$length"] || [1, 1];
 
             if(Array.isArray(definition[key])) {
-                let value = _xsdTypeLookup(definition[key][0], length[1]);
+                let value = _generateXsdTypeSample(definition[key][0], length[1]);
                 result[keyName] = new Array(definition[key][2]).fill(value);
 
             } else {
-                result[keyName] = _xsdTypeLookup(definition[key], length[1]);
+                result[keyName] = _generateXsdTypeSample(definition[key], length[1]);
             }
 
         } else if(key.indexOf("$") === -1 && typeof definition[key] === 'object') {
@@ -821,7 +859,7 @@ function _generateSample(definition) {
     return result;
 }
 
-function _xsdTypeLookup(type, length) {
+function _generateXsdTypeSample(type, length) {
     // http://www.xml.dvint.com/docs/SchemaDataTypesQR-2.pdf
     switch(type) {
         case "boolean": return true;

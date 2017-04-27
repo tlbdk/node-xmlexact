@@ -17,7 +17,7 @@ const defaultFromXmlOptions = {
 
 function toXml(obj, rootName, definition = {}, options = {}) {
     let args = Object.assign({}, defaultToXmlOptions, options);
-    return _toXml(obj, definition, rootName, args.indentation, args.optimizeEmpty, args.convertTypes);
+    return _toXml(obj, definition, rootName, args.indentation, args.optimizeEmpty, args.convertTypes, args.validation);
 }
 
 function fromXml(xml, definition = {}, options = {}) {
@@ -74,7 +74,7 @@ class Parser {
     }
 }
 
-function _toXml (obj, definition, parentName, indentation, optimizeEmpty, convertTypes, level = 0) {
+function _toXml (obj, definition, parentName, indentation, optimizeEmpty, convertTypes, validation, level = 0, index = -1) {
     definition = definition ? definition : {};
 
     let result = "";
@@ -89,7 +89,9 @@ function _toXml (obj, definition, parentName, indentation, optimizeEmpty, conver
     }
     let order = obj[parentName + "$order"] || definition[parentName + "$order"];
     let type = obj[parentName + "$type"] || definition[parentName + "$type"];
+    let length = obj[parentName + "$length"] || definition[parentName + "$length"];
 
+    // Copy over defined attributes to so they get added to the final xml
     let attributes = {};
     let definitionAttributes = (definition[parentName + "$attributes"] || {});
     Object.keys(definitionAttributes).forEach((key) => {
@@ -117,16 +119,31 @@ function _toXml (obj, definition, parentName, indentation, optimizeEmpty, conver
         return result;
     }
 
-    if(convertTypes) {
-        obj = _convertToXsdType(type, obj);
-    }
-
     if(Array.isArray(obj)) {
-        obj.forEach(function(value) {
-            result += _toXml(value, definition, namespace + parentName, indentation, optimizeEmpty, convertTypes, level);
+        if(validation) {
+            if(!Array.isArray(type)) {
+                throw new Error("Object key '" + parentName + "' was not defined as an array but as '" + type + "'");
+            }
+            if(type.length === 2) {
+                if(obj.length !== type[1]) {
+                    throw new Error("Array '" + parentName + "' should be " + type[1] + " in length but is " + obj.length);
+                }
+            }
+            else if(type.length === 3) {
+                if(obj.length > type[1]) {
+                    throw new Error("Array '" + parentName + "' should be larger than " + type[1] + " in length but is " + obj.length);
+                }
+                if(obj.length < type[2]) {
+                    throw new Error("Array '" + parentName + "' should be smaller than " + type[2] + " in length but is " + obj.length);
+                }
+            }
+        }
+
+        obj.forEach(function(value, index) {
+            result += _toXml(value, definition, namespace + parentName, indentation, optimizeEmpty, convertTypes, validation, level, index);
         });
 
-    } else if(typeof obj === "object") {
+    } else if(typeof obj === "object" && (!type || obj.hasOwnProperty("$"))) {
         let keys = Object.getOwnPropertyNames(obj);
         if(order) {
             keys = keys.sort((a, b) => {
@@ -146,11 +163,14 @@ function _toXml (obj, definition, parentName, indentation, optimizeEmpty, conver
         keys.forEach(function(key) {
             if(key === "$") { // TODO: Support data before and after
                 let objValue = obj[key];
-                if(convertTypes) {
-                    let attributeType = definition[parentName + "$type"];
-                    if (attributeType) {
-                        objValue = _convertToXsdType(attributeType, objValue);
+                if(validation && type) {
+                    let objValueType = typeof objValue;
+                    if(typeof objValueType !== _xsdTypeLookup(type)) {
+                        throw new Error(`Object key '${key}' is not of expected type '${type}' but of type '${objValueType}'`);
                     }
+                }
+                if(convertTypes && type) {
+                    objValue = _convertToXsdType(type, objValue);
                 }
                 subResult += objValue;
 
@@ -162,6 +182,12 @@ function _toXml (obj, definition, parentName, indentation, optimizeEmpty, conver
                 if(convertTypes) {
                     let attributeType = definitionAttributes[key.substr(1) + "$type"];
                     if(attributeType) {
+                        if(validation) {
+                            let objValueType = typeof attributeValue;
+                            if(typeof objValueType !== _xsdTypeLookup(attributeType)) {
+                                throw new Error(`Attribute key '${key.substr(1)}' is not of expected type '${type}' but of type '${objValueType}'`);
+                            }
+                        }
                         attributeValue = _convertToXsdType(attributeType, attributeValue);
                     }
                 }
@@ -171,7 +197,7 @@ function _toXml (obj, definition, parentName, indentation, optimizeEmpty, conver
                 // Skip definition information such as order
 
             } else {
-                subResult += _toXml(obj[key], definition[parentName], key, indentation, optimizeEmpty, convertTypes, level + 1);
+                subResult += _toXml(obj[key], definition[parentName], key, indentation, optimizeEmpty, convertTypes, validation, level + 1);
             }
         });
 
@@ -195,6 +221,19 @@ function _toXml (obj, definition, parentName, indentation, optimizeEmpty, conver
             result += " " + key + '="' + attributes[key] + '"';
         });
 
+        if(convertTypes) {
+            // TODO: Finish validation
+            /*if(validation && type) {
+             let objValueType = typeof objValue;
+             if(typeof objValueType !== _xsdTypeLookup(type)) {
+             throw new Error(`Object key '${key}' is not of expected type '${type}' but of type '${objValueType}'`);
+             }
+             }*/
+            // obj = _convertToXsdType(type, obj);
+        }
+
+
+        // TODO: Validate that we convert types for array values
         if(obj === "" && optimizeEmpty) {
             result += " />\n";
 
@@ -202,6 +241,9 @@ function _toXml (obj, definition, parentName, indentation, optimizeEmpty, conver
             result += ">\n"
                 + whitespace.repeat(2) + obj.replace(/\n/g, "\n" + whitespace.repeat(2)) + "\n"
                 + whitespace + "</" + namespace + parentName + ">\n";
+
+        } else if(convertTypes && type) {
+            result += ">" + _convertToXsdType(type, obj) + "</" + namespace + parentName + ">\n";
 
         } else {
             result += ">" + escapeValue(obj) + "</" + namespace + parentName + ">\n";
@@ -490,6 +532,38 @@ function _convertFromXsdType(type, value) {
 
     } else {
         return value;
+    }
+}
+
+function _xsdTypeLookup(type) {
+    // http://www.xml.dvint.com/docs/SchemaDataTypesQR-2.pdf
+    switch(type) {
+        case "boolean": return "boolean";
+        case "base64Binary": return "string";
+        case "hexBinary": return "string";
+        case "anyURI": return "string";
+        case "language": return "string";
+        case "normalizedString": return "string";
+        case "string": return "string";
+        case "token": return "string";
+        case "byte": return "number";
+        case "decimal": return "number";
+        case "double": return "number";
+        case "float": return "number";
+        case "int": return "number";
+        case "integer": return "number";
+        case "long": return "number";
+        case "negativeInteger": return "number";
+        case "nonNegativeInteger": return "number";
+        case "nonPositiveInteger": return "number";
+        case "short": return "number";
+        case "unsignedByte": return "number";
+        case "unsignedInt": return "number";
+        case "unsignedLong": return "number";
+        case "unsignedShort": return "number";
+        case "empty": return "empty";
+        case "any": return "any";
+        default: throw new Error("Unknown XSD type '" + type + "'");
     }
 }
 

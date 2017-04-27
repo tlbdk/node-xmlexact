@@ -218,7 +218,8 @@ describe('Binary encoding', function () {
         complexAll: {
             base64Binary$type: "base64Binary",
             hexBinary$type: "hexBinary",
-            base64BinaryWithAttribute$type: "base64Binary"
+            base64BinaryWithAttribute$type: "base64Binary",
+            arrayOfBase64Binary: ["base64Binary"]
         }
     };
 
@@ -231,7 +232,8 @@ describe('Binary encoding', function () {
             base64BinaryWithAttribute: {
                 $: Buffer.from("ÆØÅ"),
                 $test: "hello"
-            }
+            },
+            arrayOfBase64Binary: [Buffer.from("ÆØÅ"), Buffer.from("ÆØÅ")]
         },
         complexAll$order: [
             "base64Binary",
@@ -245,6 +247,8 @@ describe('Binary encoding', function () {
         "  <base64Binary>w4bDmMOF</base64Binary>",
         "  <hexBinary>c385c398c386</hexBinary>",
         '  <base64BinaryWithAttribute test="hello">w4bDmMOF</base64BinaryWithAttribute>',
+        "  <arrayOfBase64Binary>w4bDmMOF</arrayOfBase64Binary>",
+        "  <arrayOfBase64Binary>w4bDmMOF</arrayOfBase64Binary>",
         "</complexAll>",
     ].join("\n");
 

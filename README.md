@@ -216,7 +216,8 @@ Output of xml:
 
 ## Generating definitions
 
-The generator does some guess work to 
+The generator does some guess work to generate the definition and might not always find the right types, fx. in case of
+base64Binary where it could also be a string.  
 
 ``` JavaScript
 let generatedDefinition = xmlExact.generateDefinition(sampleXml);

@@ -6,7 +6,8 @@ const defaultToXmlOptions = {
   indentation: 2,
   optimizeEmpty: true,
   convertTypes: true,
-  validation: false
+  validation: false,
+  xmlHeader: false
 }
 
 const defaultFromXmlOptions = {
@@ -17,14 +18,17 @@ const defaultFromXmlOptions = {
 
 function toXml(obj, rootName, definition = {}, options = {}) {
   let args = Object.assign({}, defaultToXmlOptions, options)
-  return _toXml(
-    obj,
-    definition,
-    rootName,
-    args.indentation,
-    args.optimizeEmpty,
-    args.convertTypes,
-    args.validation
+  return (
+    (options.xmlHeader ? `<?xml version="1.0" encoding="UTF-8" ?>\n` : '') +
+    _toXml(
+      obj,
+      definition,
+      rootName,
+      args.indentation,
+      args.optimizeEmpty,
+      args.convertTypes,
+      args.validation
+    )
   )
 }
 
@@ -39,13 +43,18 @@ function generateSample(rootName, definition) {
   }
 }
 
-function generateDefinition(xmlOrObj, type = 'xml', namespaces = {}) {
+function generateDefinition(
+  xmlOrObj,
+  type = 'xml',
+  namespaces = {},
+  options = { guessBase64Binary: false }
+) {
   if (type === 'xml') {
     let obj =
       typeof xmlOrObj === 'string'
         ? _fromXml(xmlOrObj, null, false, false)
         : xmlOrObj
-    return _generateDefinitionXml(obj)
+    return _generateDefinitionXml(obj, options)
   } else if (type === 'xsd') {
     let obj =
       typeof xmlOrObj === 'string'
@@ -115,6 +124,7 @@ function _toXml(
   }
   let order = obj[parentName + '$order'] || definition[parentName + '$order']
   let type = obj[parentName + '$type'] || definition[parentName + '$type']
+  // TODO: Validate length of value
   let length = obj[parentName + '$length'] || definition[parentName + '$length']
 
   // Copy over defined attributes to so they get added to the final xml
@@ -667,7 +677,7 @@ function _xsdTypeLookup(type) {
   }
 }
 
-function _generateDefinitionXml(obj) {
+function _generateDefinitionXml(obj, options) {
   let definition = {}
 
   Object.keys(obj).forEach(key => {
@@ -678,7 +688,10 @@ function _generateDefinitionXml(obj) {
         if (Array.isArray(obj[key])) {
           definition[key + '$type'] = []
           if (obj[key].length > 0) {
-            let subDefinition = _generateDefinitionXml({ [key]: obj[key][0] })
+            let subDefinition = _generateDefinitionXml(
+              { [key]: obj[key][0] },
+              options
+            )
             if (subDefinition[key + '$type']) {
               definition[key + '$type'].push(subDefinition[key + '$type'])
             } else if (subDefinition[key]) {
@@ -686,7 +699,7 @@ function _generateDefinitionXml(obj) {
             }
           }
         } else {
-          definition[key] = _generateDefinitionXml(obj[key])
+          definition[key] = _generateDefinitionXml(obj[key], options)
         }
       } else {
         let value = obj[key]
@@ -698,9 +711,13 @@ function _generateDefinitionXml(obj) {
           definition[key + '$type'] = 'int'
         } else if (value.match(/^\d+\.\d+$/)) {
           definition[key + '$type'] = 'float'
-        } else if (value.match(/^[0-9A-Fa-f]{8,}$/)) {
+        } else if (
+          options.guessBase64Binary &&
+          value.match(/^[0-9A-Fa-f]{8,}$/)
+        ) {
           definition[key + '$type'] = 'hexBinary'
         } else if (
+          options.guessBase64Binary &&
           value.match(
             /^([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{4}|[A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)$/
           )
@@ -721,14 +738,18 @@ function _generateDefinitionXml(obj) {
 function _generateDefinitionXsd(schema, namespaces) {
   // TODO: Read namespaces from all levels
   // Make reverse lookup possible
-  let namespaceToAlias = {}
+  let namespaceToAlias = {
+    'http://www.w3.org/2001/XMLSchema': 'xmlns:xsd'
+  }
   Object.keys(namespaces).forEach(function(key) {
     namespaceToAlias[namespaces[key]] = key
   })
 
   // Build type lookup cache
   let typeLookupMap = {}
-  let targetNamespace = schema.$targetNamespace // TODO: Default to value
+  let targetNamespace = schema.$targetNamespace
+    ? schema.$targetNamespace
+    : 'http://www.w3.org/2001/XMLSchema'
   let targetNamespaceAlias = namespaceToAlias[targetNamespace]
   if (!targetNamespaceAlias) {
     throw new Error(
@@ -847,14 +868,18 @@ function _elementToDefinition(
         type = element.simpleType.restriction.$base
 
         if (element.simpleType.restriction.length) {
-          maxLength = element.simpleType.restriction.length.$value
-          minLength = element.simpleType.restriction.length.$value
+          maxLength = parseInt(element.simpleType.restriction.length.$value)
+          minLength = parseInt(element.simpleType.restriction.length.$value)
         } else {
           if (element.simpleType.restriction.maxLength) {
-            maxLength = element.simpleType.restriction.maxLength.$value
+            maxLength = parseInt(
+              element.simpleType.restriction.maxLength.$value
+            )
           }
           if (element.simpleType.restriction.minLength) {
-            minLength = element.simpleType.restriction.minLength.$value
+            minLength = parseInt(
+              element.simpleType.restriction.minLength.$value
+            )
           }
         }
       } else if (element.simpleType.list) {

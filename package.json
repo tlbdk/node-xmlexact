@@ -1,16 +1,14 @@
 {
   "name": "xml-exact",
   "version": "1.0.0",
+  "author": "Troels Liebe Bentsen<tlb@nversion.dk>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/tlbdk/node-xml-exact/issues"
+  },
   "description": "XmlExact simplifies working with complex XML documents from JavaScript without the XML suck",
+  "homepage": "https://github.com/tlbdk/node-xml-exact#readme",
   "main": "src/xmlexact.js",
-  "dependencies": {
-    "node-expat": "^2.3.13"
-  },
-  "devDependencies": {
-    "chai": "^3.5.0",
-    "istanbul": "^0.4.5",
-    "mocha": "^3.2.0"
-  },
   "scripts": {
     "test": "istanbul test _mocha -- -R spec"
   },
@@ -18,10 +16,16 @@
     "type": "git",
     "url": "git+https://github.com/tlbdk/node-xml-exact.git"
   },
-  "author": "Troels Liebe Bentsen<tlb@nversion.dk>",
-  "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/tlbdk/node-xml-exact/issues"
+  "dependencies": {
+    "node-expat": "^2.3.13"
   },
-  "homepage": "https://github.com/tlbdk/node-xml-exact#readme"
+  "devDependencies": {
+    "chai": "^3.5.0",
+    "eslint": "^4.9.0",
+    "eslint-config-prettier": "^2.6.0",
+    "eslint-plugin-prettier": "^2.3.1",
+    "istanbul": "^0.4.5",
+    "mocha": "^3.2.0",
+    "prettier": "^1.7.4"
+  }
 }

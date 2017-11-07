@@ -493,7 +493,7 @@ function _fromXml(xml, objectDefinition, inlineAttributes, convertTypes) {
   })
 
   parser.on('text', function(data) {
-    currentValue += data.trim()
+    currentValue += data
   })
 
   parser.on('endElement', function(name) {
@@ -543,7 +543,7 @@ function _fromXml(xml, objectDefinition, inlineAttributes, convertTypes) {
           } else {
             currentObject[name] = currentValue // TODO: Handle inline attributes
           }
-        } else if (currentValue != '') {
+        } else if (currentValue.trim() != '') {
           if (convertTypes) {
             currentObject[name].$ = _convertFromXsdType(
               currentType,

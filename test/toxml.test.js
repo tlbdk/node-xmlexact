@@ -4,7 +4,7 @@ const expect = require('unexpected')
 const { toXml } = require('../src/toxml')
 const { dedent } = require('./testutils')
 
-describe.only('toXml', () => {
+describe('toXml', () => {
   it('root (string, int, bool, float, empty string, null, undefined)', () => {
     for (let val of ['string', 1, true, 1.1, '', null, undefined, null]) {
       let obj = {
@@ -69,7 +69,7 @@ describe.only('toXml', () => {
   })
 })
 
-describe.only('toXml extend', () => {
+describe('toXml extend', () => {
   const definition = {
     complexAll$attributes: {
       boolean1$type: 'boolean',
@@ -119,18 +119,49 @@ describe.only('toXml extend', () => {
 
   const expectedXml = [
     '<complexAll boolean1="true" boolean2="false" float="1.1" int="1">',
-    '<boolean1>true</boolean1>',
-    '<boolean2>false</boolean2>',
-    '<float>1.1</float>',
-    '<int>1</int>',
-    '<intWithAttribute test="hello">1</intWithAttribute>',
-    '<intWithDefinedAttribute test="hello">1</intWithDefinedAttribute>',
-    '<nullableInt></nullableInt>',
+    '  <boolean1>true</boolean1>',
+    '  <boolean2>false</boolean2>',
+    '  <float>1.1</float>',
+    '  <int>1</int>',
+    '  <intWithAttribute test="hello">1</intWithAttribute>',
+    '  <intWithDefinedAttribute test="hello">1</intWithDefinedAttribute>',
+    '  <nullableInt></nullableInt>',
     '</complexAll>'
-  ].join('')
+  ].join('\n')
 
   it('to', () => {
     let xml = toXml(obj, 'complexAll', definition, { optimizeEmpty: false })
+    expect(xml, 'to equal', expectedXml)
+  })
+
+  it('sample should convert to XML that looks the same as sample_xml', () => {
+    const sampleObj = {
+      root: {
+        first: {
+          firstNested: '',
+          secondNested: ''
+        },
+        second: '',
+        last: {
+          stuff: ''
+        }
+      }
+    }
+    const expectedXml = [
+      '<root>',
+      '  <first>',
+      '    <firstNested></firstNested>',
+      '    <secondNested></secondNested>',
+      '  </first>',
+      '  <second></second>',
+      '  <last>',
+      '    <stuff></stuff>',
+      '  </last>',
+      '</root>'
+    ].join('\n')
+    const xml = toXml(sampleObj, 'root', null, {
+      optimizeEmpty: false
+    })
     expect(xml, 'to equal', expectedXml)
   })
 })

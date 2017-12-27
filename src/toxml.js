@@ -36,7 +36,7 @@ function _toXml(key, value, definition, options, level = 0) {
   if (type === 'array') {
     if (options.validation) validateXmlType(value, xmlType, length, true)
     for (let itemValue of value) {
-      xmlResult += _toXml(key, itemValue, definition, options)
+      xmlResult += _toXml(key, itemValue, definition, options, level)
     }
     return xmlResult
   }
@@ -63,20 +63,23 @@ function _toXml(key, value, definition, options, level = 0) {
 
   // Build XML
   if (type === 'object') {
+    let prefix = ''
+    let postfix = ''
     let subResult = ''
     let order = value[key + '$order'] || definition[key + '$order']
     for (let objectKey of sortByList(Object.keys(value), order)) {
-      if (objectKey === '$' || objectKey === '$$') {
-        // Support pre and post data
+      if (objectKey === '$') {
         let objectValue = value[objectKey]
         if (options.validation) {
           validateXmlType(objectValue, xmlType, length, false)
         }
-        subResult += _formatXmlOutput(
-          objectValue,
-          xmlType,
-          options.convertTypes
-        )
+        prefix += _formatXmlOutput(objectValue, xmlType, options.convertTypes)
+      } else if (objectKey === '$$') {
+        let objectValue = value[objectKey]
+        if (options.validation) {
+          validateXmlType(objectValue, xmlType, length, false)
+        }
+        postfix += _formatXmlOutput(objectValue, xmlType, options.convertTypes)
       } else if (options.validation && xmlType) {
         // TODO(Error): does not have $ or $$ set but has xmlType
       } else if (objectKey === 'namespace$') {
@@ -100,19 +103,29 @@ function _toXml(key, value, definition, options, level = 0) {
           objectKey,
           value[objectKey],
           definition[key],
-          options
+          options,
+          level + 1
         )
       }
     }
-    let elementName = namespace ? `${namespace}:${key}` : key
-    xmlResult += generateXml(elementName, attributes, subResult, 0, options)
+    xmlResult += generateXml(
+      namespace ? `${namespace}:${key.replace(/^.+?:/, '')}` : key,
+      attributes,
+      subResult === '' ? prefix + postfix : `\n${prefix}${subResult}${postfix}`,
+      level * options.indentation,
+      options
+    )
   } else {
     if (options.validation) {
       validateXmlType(value, xmlType, length, false)
     }
-    let xmlValue = _formatXmlOutput(value, xmlType, options.convertTypes)
-    let elementName = namespace ? `${namespace}:${key}` : key
-    xmlResult += generateXml(elementName, attributes, xmlValue, 0, options)
+    xmlResult += generateXml(
+      namespace ? `${namespace}:${key.replace(/^.+?:/, '')}` : key,
+      attributes,
+      _formatXmlOutput(value, xmlType, options.convertTypes),
+      level * options.indentation,
+      options
+    )
   }
   return xmlResult
 }
@@ -130,10 +143,13 @@ function generateXml(elementName, attributes, value, indentation, options) {
 
   if (value === '' && options.optimizeEmpty) {
     // <xml />
-    result += ' />'
+    result += ` />${indentation ? '\n' : ''}`
   } else {
     // ...</xml>
-    result += `>${value}</${elementName}>`
+    result += `>${value}`
+    result +=
+      typeof value === 'string' && value.indexOf('\n') >= 0 ? whitespace : ''
+    result += `</${elementName}>${indentation ? '\n' : ''}`
   }
 
   return result

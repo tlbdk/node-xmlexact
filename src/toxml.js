@@ -7,7 +7,7 @@ function toXml(obj, rootName, definition = {}, options = {}) {
   return _toXml(rootName, value, definition, options)
 }
 
-function _toXml(key, value, definition, options) {
+function _toXml(key, value, definition = {}, options = {}) {
   let xmlResult = ''
 
   // Look up xmlType and length for key
@@ -56,7 +56,7 @@ function _toXml(key, value, definition, options) {
     let subResult = ''
     let order = value[key + '$order'] || definition[key + '$order']
     for (let objectKey of sortByList(Object.keys(value), order)) {
-      if (key === '$' || key === '$$') {
+      if (objectKey === '$' || objectKey === '$$') {
         // Support pre and post data
         let objectValue = value[objectKey]
         if (options.validation) {
@@ -111,9 +111,9 @@ function generateXml(elementName, attributes, value, indentation, options) {
   let whitespace = ' '.repeat(indentation)
   let result = ''
 
-  // Write <xml ...>
+  // Write <xml attrib=...>
   result += whitespace + '<' + elementName
-  for (let key of Object.keys(attributes)) {
+  for (let key of Object.keys(attributes).sort()) {
     result += ' ' + key + '="' + attributes[key] + '"'
   }
 

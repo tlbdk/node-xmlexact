@@ -4,40 +4,40 @@ const expect = require('unexpected')
 const { toXml } = require('../src/toxml')
 const { dedent } = require('./testutils')
 
-describe.only('toXml', () => {
-  it('root: null/undefined/empty', () => {
+describe('toXml root only', () => {
+  it('null/undefined/empty', () => {
     for (let val of [null, undefined, null]) {
       let obj = {
         root: val
       }
       let xml = toXml(obj, 'root')
-      expect(xml, 'to equal', `<root></root>\n`)
+      expect(xml, 'to equal', `<root></root>`)
     }
   })
-  it('ns:root by object', () => {
+  it('ns by object', () => {
     let obj = {
       'ns:root': ''
     }
-    expect(toXml(obj, 'ns:root'), 'to equal', `<ns:root></ns:root>\n`)
+    expect(toXml(obj, 'ns:root'), 'to equal', `<ns:root></ns:root>`)
   })
-  it('ns:root by definition', () => {
+  it('ns by definition', () => {
     let obj = {
       root: ''
     }
     let definition = {
       root$namespace: 'ns'
     }
-    expect(toXml(obj, 'root', definition), 'to equal', `<ns:root></ns:root>\n`)
+    expect(toXml(obj, 'root', definition), 'to equal', `<ns:root></ns:root>`)
   })
-  it('root attribute by object', () => {
+  it('attribute by object', () => {
     let obj = {
       root: {
         $attrib1: ''
       }
     }
-    expect(toXml(obj, 'root'), 'to equal', `<root attrib1=""></root>\n`)
+    expect(toXml(obj, 'root'), 'to equal', `<root attrib1=""></root>`)
   })
-  it('root attribute by definition', () => {
+  it('attribute by definition', () => {
     let obj = {
       root: ''
     }
@@ -49,10 +49,10 @@ describe.only('toXml', () => {
     expect(
       toXml(obj, 'root', definition),
       'to equal',
-      `<root attrib1=""></root>\n`
+      `<root attrib1=""></root>`
     )
   })
-  it('root attribute by definition', () => {
+  it('attribute by definition', () => {
     let obj = {
       root: ''
     }
@@ -65,8 +65,19 @@ describe.only('toXml', () => {
     expect(
       toXml(obj, 'root', definition),
       'to equal',
-      `<root attrib1=""></root>\n`
+      `<root attrib1=""></root>`
     )
   })
-  // TODO: Empty array
+})
+
+describe('toXml root only', () => {
+  it('null/undefined/empty', () => {
+    for (let val of [null, undefined, null]) {
+      let obj = {
+        root: val
+      }
+      let xml = toXml(obj, 'root')
+      expect(xml, 'to equal', `<root></root>`)
+    }
+  })
 })

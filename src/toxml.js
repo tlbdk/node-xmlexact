@@ -119,10 +119,10 @@ function generateXml(elementName, attributes, value, indentation, options) {
 
   if (value === '' && options.optimizeEmpty) {
     // <xml />
-    result += ' />\n'
+    result += ' />'
   } else {
     // ...</xml>
-    result += `>${value}</${elementName}>\n`
+    result += `>${value}</${elementName}>`
   }
 
   return result

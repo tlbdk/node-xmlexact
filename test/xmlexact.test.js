@@ -279,6 +279,7 @@ describe('Types', function() {
       boolean2$type: 'boolean',
       float$type: 'float',
       int$type: 'int',
+      nullableInt$type: 'int?',
       intWithAttribute$type: 'int',
       intWithDefinedAttribute$type: 'int',
       intWithDefinedAttribute$attributes: {
@@ -308,6 +309,7 @@ describe('Types', function() {
         $: 1,
         $test: 'hello'
       },
+      //nullableInt: null,
       intWithDefinedAttribute: 1
     }
   }
@@ -318,6 +320,7 @@ describe('Types', function() {
     '  <boolean2>false</boolean2>',
     '  <float>1.1</float>',
     '  <int>1</int>',
+    //    '  <nullableInt></nullableInt>',
     '  <intWithAttribute test="hello">1</intWithAttribute>',
     '  <intWithDefinedAttribute test="hello">1</intWithDefinedAttribute>',
     '</complexAll>'

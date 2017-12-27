@@ -10,7 +10,7 @@ describe.only('toXml', () => {
       let obj = {
         root: val
       }
-      let xml = toXml(obj, 'root')
+      let xml = toXml(obj, 'root', null, { optimizeEmpty: false })
       expect(xml, 'to equal', `<root>${val ? val : ''}</root>`)
     }
   })
@@ -21,7 +21,7 @@ describe.only('toXml', () => {
           $: val
         }
       }
-      let xml = toXml(obj, 'root')
+      let xml = toXml(obj, 'root', null, { optimizeEmpty: false })
       expect(xml, 'to equal', `<root>${val ? val : ''}</root>`)
     }
   })
@@ -29,7 +29,8 @@ describe.only('toXml', () => {
     let obj = {
       'ns:root': ''
     }
-    expect(toXml(obj, 'ns:root'), 'to equal', `<ns:root></ns:root>`)
+    let xml = toXml(obj, 'ns:root', null, { optimizeEmpty: false })
+    expect(xml, 'to equal', `<ns:root></ns:root>`)
   })
   it('ns by definition', () => {
     let obj = {
@@ -38,7 +39,8 @@ describe.only('toXml', () => {
     let definition = {
       root$namespace: 'ns'
     }
-    expect(toXml(obj, 'root', definition), 'to equal', `<ns:root></ns:root>`)
+    let xml = toXml(obj, 'root', definition, { optimizeEmpty: false })
+    expect(xml, 'to equal', `<ns:root></ns:root>`)
   })
   it('attribute by object(string, int, bool, float, empty string, null, undefined)', () => {
     for (let val of ['string', 1, true, 1.1, '', null, undefined, null]) {
@@ -47,11 +49,8 @@ describe.only('toXml', () => {
           $attrib1: val
         }
       }
-      expect(
-        toXml(obj, 'root'),
-        'to equal',
-        `<root attrib1="${val ? val : ''}"></root>`
-      )
+      let xml = toXml(obj, 'root', null, { optimizeEmpty: false })
+      expect(xml, 'to equal', `<root attrib1="${val ? val : ''}"></root>`)
     }
   })
   it('attribute by definition(empty string, null, undefined)', () => {
@@ -64,11 +63,8 @@ describe.only('toXml', () => {
           attrib1: val
         }
       }
-      expect(
-        toXml(obj, 'root', definition),
-        'to equal',
-        `<root attrib1="${val ? val : ''}"></root>`
-      )
+      let xml = toXml(obj, 'root', definition, { optimizeEmpty: false })
+      expect(xml, 'to equal', `<root attrib1="${val ? val : ''}"></root>`)
     }
   })
 })
@@ -134,6 +130,7 @@ describe.only('toXml extend', () => {
   ].join('')
 
   it('to', () => {
-    expect(toXml(obj, 'complexAll', definition), 'to equal', expectedXml)
+    let xml = toXml(obj, 'complexAll', definition, { optimizeEmpty: false })
+    expect(xml, 'to equal', expectedXml)
   })
 })

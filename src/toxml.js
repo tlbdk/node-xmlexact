@@ -1,13 +1,23 @@
 // @ts-check
 'use strict'
 
-function toXml(obj, rootName, definition = {}, options = {}) {
-  let value = obj[rootName]
-  // TODO Validate value is obj here
-  return _toXml(rootName, value, definition, options)
+const defaultToXmlOptions = {
+  indentation: 2,
+  optimizeEmpty: true,
+  convertTypes: true,
+  validation: false,
+  xmlHeader: false
 }
 
-function _toXml(key, value, definition = {}, options = {}) {
+function toXml(obj, rootName, definition = {}, options = {}) {
+  let value = obj[rootName]
+  let currentOptions = { ...defaultToXmlOptions, ...options }
+  return _toXml(rootName, value, definition, currentOptions)
+}
+
+function _toXml(key, value, definition, options, level = 0) {
+  definition = definition ? definition : {}
+
   let xmlResult = ''
 
   // Look up xmlType and length for key
@@ -112,6 +122,7 @@ function generateXml(elementName, attributes, value, indentation, options) {
   let result = ''
 
   // Write <xml attrib=...>
+  // Attributes are unordered, but we sort here so it's easer to test the output
   result += whitespace + '<' + elementName
   for (let key of Object.keys(attributes).sort()) {
     result += ' ' + key + '="' + attributes[key] + '"'

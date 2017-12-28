@@ -10,7 +10,10 @@ describe('toXml', () => {
       let obj = {
         root: val
       }
-      let xml = toXml(obj, 'root', null, { optimizeEmpty: false })
+      let xml = toXml(obj, 'root', null, {
+        optimizeEmpty: false,
+        convertTypes: true
+      })
       expect(xml, 'to equal', `<root>${val ? val : ''}</root>`)
     }
   })
@@ -21,7 +24,10 @@ describe('toXml', () => {
           $: val
         }
       }
-      let xml = toXml(obj, 'root', null, { optimizeEmpty: false })
+      let xml = toXml(obj, 'root', null, {
+        optimizeEmpty: false,
+        convertTypes: true
+      })
       expect(xml, 'to equal', `<root>${val ? val : ''}</root>`)
     }
   })
@@ -29,7 +35,10 @@ describe('toXml', () => {
     let obj = {
       'ns:root': ''
     }
-    let xml = toXml(obj, 'ns:root', null, { optimizeEmpty: false })
+    let xml = toXml(obj, 'ns:root', null, {
+      optimizeEmpty: false,
+      convertTypes: true
+    })
     expect(xml, 'to equal', `<ns:root></ns:root>`)
   })
   it('ns by definition', () => {
@@ -39,7 +48,10 @@ describe('toXml', () => {
     let definition = {
       root$namespace: 'ns'
     }
-    let xml = toXml(obj, 'root', definition, { optimizeEmpty: false })
+    let xml = toXml(obj, 'root', definition, {
+      optimizeEmpty: false,
+      convertTypes: true
+    })
     expect(xml, 'to equal', `<ns:root></ns:root>`)
   })
   it('attribute by object(string, int, bool, float, empty string, null, undefined)', () => {
@@ -49,7 +61,10 @@ describe('toXml', () => {
           $attrib1: val
         }
       }
-      let xml = toXml(obj, 'root', null, { optimizeEmpty: false })
+      let xml = toXml(obj, 'root', null, {
+        optimizeEmpty: false,
+        convertTypes: true
+      })
       expect(xml, 'to equal', `<root attrib1="${val ? val : ''}"></root>`)
     }
   })
@@ -63,109 +78,68 @@ describe('toXml', () => {
           attrib1: val
         }
       }
-      let xml = toXml(obj, 'root', definition, { optimizeEmpty: false })
+      let xml = toXml(obj, 'root', definition, {
+        optimizeEmpty: false,
+        convertTypes: true
+      })
       expect(xml, 'to equal', `<root attrib1="${val ? val : ''}"></root>`)
     }
   })
-})
-
-describe('toXml extend', () => {
-  const definition = {
-    complexAll$attributes: {
-      boolean1$type: 'boolean',
-      boolean2$type: 'boolean',
-      float$type: 'float',
-      int$type: 'int'
-    },
-    complexAll: {
-      boolean1$type: 'boolean',
-      boolean2$type: 'boolean',
-      float$type: 'float',
-      int$type: 'int',
-      nullableInt$type: 'int?',
-      intWithAttribute$type: 'int',
-      intWithDefinedAttribute$type: 'int',
-      intWithDefinedAttribute$attributes: {
-        test: 'hello'
-      }
-    },
-    complexAll$order: [
-      'boolean1',
-      'boolean2',
-      'float',
-      'int',
-      'intWithAttribute',
-      'intWithDefinedAttribute'
-    ]
-  }
-  const obj = {
-    complexAll: {
-      $boolean1: true,
-      $boolean2: false,
-      $float: 1.1,
-      $int: 1,
-      boolean1: true,
-      boolean2: false,
-      float: 1.1,
-      int: 1,
-      intWithAttribute: {
-        $: 1,
-        $test: 'hello'
-      },
-      nullableInt: null,
-      intWithDefinedAttribute: 1
-    }
-  }
-
-  const expectedXml = [
-    '<complexAll boolean1="true" boolean2="false" float="1.1" int="1">',
-    '  <boolean1>true</boolean1>',
-    '  <boolean2>false</boolean2>',
-    '  <float>1.1</float>',
-    '  <int>1</int>',
-    '  <intWithAttribute test="hello">1</intWithAttribute>',
-    '  <intWithDefinedAttribute test="hello">1</intWithDefinedAttribute>',
-    '  <nullableInt></nullableInt>',
-    '</complexAll>'
-  ].join('\n')
-
-  it('to', () => {
-    let xml = toXml(obj, 'complexAll', definition, {
-      optimizeEmpty: false,
-      indentation: 2
-    })
-    expect(xml, 'to equal', expectedXml)
-  })
-
-  it('sample should convert to XML that looks the same as sample_xml', () => {
-    const sampleObj = {
+  it('xml indentation', () => {
+    let definition = {
       root: {
-        first: {
-          firstNested: '',
-          secondNested: ''
-        },
-        second: '',
-        last: {
-          stuff: ''
-        }
+        xml$type: 'xml'
       }
     }
-    const expectedXml = [
+
+    let obj = {
+      root: {
+        xml: dedent(`
+          <nested>
+            <val>1</val>
+          </nested>`)
+      }
+    }
+
+    let expectedXml = dedent(`
+    <root>
+      <xml>
+        <nested>
+          <val>1</val>
+        </nested>
+      </xml>
+    </root>`)
+
+    let generatedXml = toXml(obj, 'root', definition, {
+      optimizeEmpty: false,
+      indentation: 2,
+      convertTypes: true
+    })
+    expect(generatedXml, 'to equal', expectedXml)
+  })
+  it('escaped xml indentation', () => {
+    let obj = {
+      root: {
+        xml: dedent(`
+          <nested>
+            <val>1</val>
+          </nested>`)
+      }
+    }
+
+    let expectedXml = [
       '<root>',
-      '  <first>',
-      '    <firstNested></firstNested>',
-      '    <secondNested></secondNested>',
-      '  </first>',
-      '  <second></second>',
-      '  <last>',
-      '    <stuff></stuff>',
-      '  </last>',
+      '  <xml>&lt;nested&gt;',
+      '  &lt;val&gt;1&lt;/val&gt;',
+      '&lt;/nested&gt;</xml>',
       '</root>'
     ].join('\n')
-    const xml = toXml(sampleObj, 'root', null, {
+
+    let generatedXml = toXml(obj, 'root', null, {
       optimizeEmpty: false,
-      indentation: 2
+      indentation: 2,
+      convertTypes: true
     })
-    expect(xml, 'to equal', expectedXml)
+    expect(generatedXml, 'to equal', expectedXml)
   })
 })

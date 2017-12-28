@@ -3,7 +3,7 @@
 const assert = require('chai').assert
 const xmlExact = require('../src/xmlexact')
 
-describe('Validation', () => {
+describe.skip('Validation', () => {
   const definition = {
     complexAll: {
       boolean$type: 'boolean',

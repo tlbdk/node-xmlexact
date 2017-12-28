@@ -1,6 +1,8 @@
+// @ts-check
 'use strict'
 
 const expat = require('node-expat')
+const _toXml = require('./toxml')
 
 const defaultToXmlOptions = {
   indentation: 2,
@@ -17,18 +19,10 @@ const defaultFromXmlOptions = {
 }
 
 function toXml(obj, rootName, definition = {}, options = {}) {
-  let args = Object.assign({}, defaultToXmlOptions, options)
+  let currentOptions = { ...defaultToXmlOptions, ...options }
   return (
     (options.xmlHeader ? `<?xml version="1.0" encoding="UTF-8" ?>\n` : '') +
-    _toXml(
-      obj,
-      definition,
-      rootName,
-      args.indentation,
-      args.optimizeEmpty,
-      args.convertTypes,
-      args.validation
-    )
+    _toXml(obj, rootName, definition, currentOptions)
   )
 }
 
@@ -97,247 +91,6 @@ class Parser {
 
   generateDefinition(xml, type = 'xml', namespaces = {}) {
     return generateDefinition(xml, type, namespaces)
-  }
-}
-
-function _toXml(
-  obj,
-  definition,
-  parentName,
-  indentation,
-  optimizeEmpty,
-  convertTypes,
-  validation,
-  level = 0,
-  index = -1
-) {
-  definition = definition ? definition : {}
-
-  let result = ''
-  let namespace = ''
-  let nsOffset = parentName.indexOf(':')
-  if (nsOffset > -1) {
-    namespace = parentName.substr(0, nsOffset) + ':'
-    parentName = parentName.substr(nsOffset + 1)
-  } else if (definition[parentName + '$namespace']) {
-    namespace = definition[parentName + '$namespace'] + ':'
-  }
-  let order = obj[parentName + '$order'] || definition[parentName + '$order']
-  let type = obj[parentName + '$type'] || definition[parentName + '$type']
-  // TODO: Validate length of value
-  let length = obj[parentName + '$length'] || definition[parentName + '$length']
-
-  // Copy over defined attributes to so they get added to the final xml
-  let attributes = {}
-  let definitionAttributes = definition[parentName + '$attributes'] || {}
-  Object.keys(definitionAttributes).forEach(key => {
-    if (key.indexOf('$') === -1) {
-      let attributeValue = definitionAttributes[key]
-      if (convertTypes) {
-        let attributeType = definitionAttributes[key + '$type']
-        if (attributeType) {
-          attributeValue = _convertToXsdType(attributeType, attributeValue)
-        }
-      }
-      attributes[key] = attributeValue
-    }
-  })
-
-  let whitespace = ' '.repeat(level * indentation)
-
-  if (level === 0) {
-    // Go into first level
-    obj = obj[parentName]
-  }
-
-  if (obj === undefined || obj === null) {
-    // TODO: Handle null types
-    return result
-  }
-
-  if (Array.isArray(obj)) {
-    if (validation) {
-      if (!Array.isArray(type)) {
-        throw new Error(
-          `Object key '${parentName}' was not defined as an array but as '${type}'`
-        )
-      }
-      if (type.length === 2) {
-        if (obj.length !== type[1]) {
-          throw new Error(
-            `Array '${parentName}' should be ${type[1]} in length but is '${obj.length}`
-          )
-        }
-      } else if (type.length === 3) {
-        if (obj.length > type[1]) {
-          throw new Error(
-            `Array '${parentName}' should be larger than ${type[1]} in length but is ${obj.length}`
-          )
-        }
-        if (obj.length < type[2]) {
-          throw new Error(
-            `Array '${parentName}' should be smaller than ${type[2]} in length but is ${obj.length}`
-          )
-        }
-      }
-    }
-
-    obj.forEach(function(value, index) {
-      result += _toXml(
-        value,
-        definition,
-        namespace + parentName,
-        indentation,
-        optimizeEmpty,
-        convertTypes,
-        validation,
-        level,
-        index
-      )
-    })
-  } else if (
-    typeof obj === 'object' &&
-    !isBuffer(obj) &&
-    (!type || obj.hasOwnProperty('$'))
-  ) {
-    let keys = Object.getOwnPropertyNames(obj)
-    if (order) {
-      keys = keys.sort((a, b) => {
-        let aOffset = order.indexOf(a)
-        let bOffset = order.indexOf(b)
-        if (aOffset == -1 && bOffset > 0) {
-          return 1
-        }
-        if (bOffset == -1 && aOffset > 0) {
-          return -1
-        }
-        return aOffset - bOffset
-      })
-    }
-
-    let subResult = ''
-    keys.forEach(function(key) {
-      if (key === '$') {
-        // TODO: Support data before and after
-        let objValue = obj[key]
-        if (validation && type) {
-          let objValueType = typeof objValue
-          if (typeof objValueType !== _xsdTypeLookup(type)) {
-            throw new Error(
-              `Object key '${key}' is not of expected type '${type}' but of type '${objValueType}'`
-            )
-          }
-        }
-        if (convertTypes && type) {
-          objValue = _convertToXsdType(type, objValue)
-        }
-        subResult += objValue
-      } else if (key === 'namespace$') {
-        namespace = obj[key] + ':'
-      } else if (key.indexOf('$') == 0) {
-        let attributeValue = obj[key]
-        if (convertTypes) {
-          let attributeType = definitionAttributes[key.substr(1) + '$type']
-          if (attributeType) {
-            if (validation) {
-              let objValueType = typeof attributeValue
-              if (typeof objValueType !== _xsdTypeLookup(attributeType)) {
-                throw new Error(
-                  `Attribute key '${key.substr(1)}' is not of expected type` +
-                    `'${type}' but of type '${objValueType}'`
-                )
-              }
-            }
-            attributeValue = _convertToXsdType(attributeType, attributeValue)
-          }
-        }
-        attributes[key.substr(1)] = attributeValue
-      } else if (key.indexOf('$') > 0) {
-        // Skip definition information such as order
-      } else {
-        subResult += _toXml(
-          obj[key],
-          definition[parentName],
-          key,
-          indentation,
-          optimizeEmpty,
-          convertTypes,
-          validation,
-          level + 1
-        )
-      }
-    })
-
-    // Generate start and end tag
-    result += whitespace + '<' + namespace + parentName
-    Object.keys(attributes).forEach(key => {
-      result += ' ' + key + '="' + escapeValue(attributes[key]) + '"'
-    })
-
-    if (!obj['$'] && subResult === '' && optimizeEmpty) {
-      result += ' />\n'
-    } else {
-      result += obj['$'] ? '>' + subResult : '>\n' + subResult + whitespace
-      result += '</' + namespace + parentName + '>' + (level > 0 ? '\n' : '')
-    }
-  } else {
-    result += whitespace + '<' + namespace + parentName
-    Object.getOwnPropertyNames(attributes).forEach(function(key) {
-      result += ' ' + key + '="' + attributes[key] + '"'
-    })
-
-    if (convertTypes) {
-      // TODO: Finish validation
-      /*if(validation && type) {
-            let objValueType = typeof objValue;
-            if(typeof objValueType !== _xsdTypeLookup(type)) {
-                throw new Error(`Object key '${key}' is not of expected type '${type}' but of type '${objValueType}'`);
-            }
-        }*/
-    }
-
-    // TODO: Validate that we convert types for array values
-    if (obj === '' && optimizeEmpty) {
-      result += ' />\n'
-    } else if (convertTypes && type === 'xml') {
-      result += `>\n${whitespace.repeat(2)}${obj.replace(
-        /\n/g,
-        '\n' + whitespace.repeat(2)
-      )}\n${whitespace}</${namespace}${parentName}>\n`
-    } else if (convertTypes && type) {
-      result += `>${_convertToXsdType(type, obj)}</${namespace}${parentName}>\n`
-    } else {
-      result += `>${escapeValue(obj)}</${namespace}${parentName}>\n`
-    }
-  }
-
-  return result
-}
-
-function escapeValue(value) {
-  // https://stackoverflow.com/questions/1091945/what-characters-do-i-need-to-escape-in-xml-documents/1091953
-  if (typeof value === 'string') {
-    return value.replace(
-      /((?:&(?!(?:apos|quot|[gl]t|amp);))|(?:^<!\[CDATA\[.+?\]\]>)|[<>'"])/g,
-      function(match, p1) {
-        switch (p1) {
-          case '>':
-            return '&gt;'
-          case '<':
-            return '&lt;'
-          case "'":
-            return '&apos;'
-          case '"':
-            return '&quot;'
-          case '&':
-            return '&amp;'
-          default:
-            return p1
-        }
-      }
-    )
-  } else {
-    return value
   }
 }
 
@@ -569,26 +322,19 @@ function _fromXml(xml, objectDefinition, inlineAttributes, convertTypes) {
   return result
 }
 
-function _convertToXsdType(type, value) {
-  if (Array.isArray(type)) {
-    type = type[0]
-  }
-  if (typeof value === 'object' && value.hasOwnProperty('$')) {
-    // Support { key: { $: "", $att: "" } }
-    return value
-  } else if (type === 'base64Binary') {
-    return Buffer.from(value).toString('base64')
-  } else if (type === 'hexBinary') {
-    return Buffer.from(value).toString('hex')
-  } else {
-    return value
-  }
-}
-
 function _convertFromXsdType(type, value) {
   if (Array.isArray(type)) {
     type = type[0]
   }
+
+  // Support nullable
+  if (type && type.endsWith('?')) {
+    type = type.slice(0, -1)
+    if (value.match(/^\s*$/)) {
+      return null
+    }
+  }
+
   if (type === 'boolean') {
     return value === 'true'
   } else if (['decimal', 'double', 'float'].indexOf(type) > -1) {
@@ -1179,14 +925,6 @@ function _compareArray(array1, array2) {
     }
   }
   return true
-}
-
-function isBuffer(obj) {
-  return (
-    !!obj.constructor &&
-    typeof obj.constructor.isBuffer === 'function' &&
-    obj.constructor.isBuffer(obj)
-  )
 }
 
 module.exports = {

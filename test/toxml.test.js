@@ -1,7 +1,7 @@
 /*eslint-env node, mocha */
 
 const expect = require('unexpected')
-const { toXml } = require('../src/toxml')
+const toXml = require('../src/toxml')
 const { dedent } = require('./testutils')
 
 describe('toXml', () => {
@@ -130,7 +130,10 @@ describe('toXml extend', () => {
   ].join('\n')
 
   it('to', () => {
-    let xml = toXml(obj, 'complexAll', definition, { optimizeEmpty: false })
+    let xml = toXml(obj, 'complexAll', definition, {
+      optimizeEmpty: false,
+      indentation: 2
+    })
     expect(xml, 'to equal', expectedXml)
   })
 
@@ -160,7 +163,8 @@ describe('toXml extend', () => {
       '</root>'
     ].join('\n')
     const xml = toXml(sampleObj, 'root', null, {
-      optimizeEmpty: false
+      optimizeEmpty: false,
+      indentation: 2
     })
     expect(xml, 'to equal', expectedXml)
   })

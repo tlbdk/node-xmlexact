@@ -2,7 +2,6 @@
 
 const assert = require('chai').assert
 const XmlExact = require('../src/xmlexact')
-const { toXml } = require('../src/toxml')
 
 describe('XMLUtils#toXML/fromXML mixed inline and definition', () => {
   it('sample should convert to XML that looks the same as sample_xml', () => {
@@ -49,7 +48,7 @@ describe('XMLUtils#toXML/fromXML mixed inline and definition', () => {
       '</root>'
     ].join('\n')
 
-    const generated_xml = toXml(obj, 'root', definition)
+    const generated_xml = XmlExact.toXml(obj, 'root', definition)
     assert.strictEqual(generated_xml, xml)
   })
 })
@@ -82,7 +81,7 @@ describe('XMLUtils#toXML/fromXML simple', function() {
   ].join('\n')
 
   it('sample should convert to XML that looks the same as sample_xml', () => {
-    const generated_xml = toXml(sample_obj, 'root', null, {
+    const generated_xml = XmlExact.toXml(sample_obj, 'root', null, {
       optimizeEmpty: false
     })
     assert.strictEqual(generated_xml, sample_xml)
@@ -96,7 +95,7 @@ describe('XMLUtils#toXML/fromXML simple', function() {
       'secondNested'
     ])
 
-    const generated_xml = toXml(generated_obj, 'root', null, {
+    const generated_xml = XmlExact.toXml(generated_obj, 'root', null, {
       optimizeEmpty: false
     })
     assert.strictEqual(generated_xml, sample_xml)
@@ -175,7 +174,7 @@ describe('XMLUtils#toXML/fromXML complex object', function() {
 
   //console.log(JSON.stringify(result, null, 2));
   it('should convert to XML and back to js again', () => {
-    const xml = toXml(sample_obj, 'Envelope', sample_definition)
+    const xml = XmlExact.toXml(sample_obj, 'Envelope', sample_definition)
     assert.isTrue(xml.startsWith('<soap:Envelope'))
     const obj = XmlExact.fromXml(xml, sample_definition)
     assert.deepEqual(
@@ -213,7 +212,7 @@ describe('XMLUtils#toXML/fromXML simple', function() {
   ].join('\n')
 
   it('sample should convert to XML that looks the same as sample_xml', () => {
-    const generated_xml = toXml(sample_obj, 'root')
+    const generated_xml = XmlExact.toXml(sample_obj, 'root')
     assert.strictEqual(sample_xml, generated_xml)
   })
 })
@@ -258,7 +257,7 @@ describe('Binary encoding', function() {
   ].join('\n')
 
   it('Base64/Hex Encode', () => {
-    const generatedXml = toXml(obj, 'complexAll', definition)
+    const generatedXml = XmlExact.toXml(obj, 'complexAll', definition)
     assert.strictEqual(generatedXml, expectedXml)
   })
   it('Base64/Hex Decode', () => {
@@ -292,6 +291,7 @@ describe('Types', function() {
       'boolean2',
       'float',
       'int',
+      'nullableInt',
       'intWithAttribute',
       'intWithDefinedAttribute'
     ]
@@ -310,7 +310,7 @@ describe('Types', function() {
         $: 1,
         $test: 'hello'
       },
-      //nullableInt: null,
+      nullableInt: null,
       intWithDefinedAttribute: 1
     }
   }
@@ -321,14 +321,16 @@ describe('Types', function() {
     '  <boolean2>false</boolean2>',
     '  <float>1.1</float>',
     '  <int>1</int>',
-    //    '  <nullableInt></nullableInt>',
+    '  <nullableInt></nullableInt>',
     '  <intWithAttribute test="hello">1</intWithAttribute>',
     '  <intWithDefinedAttribute test="hello">1</intWithDefinedAttribute>',
     '</complexAll>'
   ].join('\n')
 
   it('to', () => {
-    const generatedXml = toXml(obj, 'complexAll', definition)
+    const generatedXml = XmlExact.toXml(obj, 'complexAll', definition, {
+      optimizeEmpty: false
+    })
     assert.strictEqual(generatedXml, xml)
   })
 
@@ -370,7 +372,7 @@ describe('Escaping', function() {
   ].join('\n')
 
   it('to', () => {
-    const generatedXml = toXml(obj, 'complexAll')
+    const generatedXml = XmlExact.toXml(obj, 'complexAll')
     assert.strictEqual(generatedXml, xml)
   })
 
@@ -467,7 +469,7 @@ describe('Test soap envelope', function() {
   }
 
   const expectedSoapXml = [
-    '<soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope/" soap:encodingStyle="http://www.w3.org/2003/05/soap-encoding">',
+    '<soap:Envelope soap:encodingStyle="http://www.w3.org/2003/05/soap-encoding" xmlns:soap="http://www.w3.org/2003/05/soap-envelope/">',
     '  <soap:Header />',
     '  <soap:Body>',
     '    <complexAll>',
@@ -540,7 +542,7 @@ describe('XMLBlob', () => {
 
 describe('XML definition generation', () => {
   const soapXml = [
-    '<soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope/" soap:encodingStyle="http://www.w3.org/2003/05/soap-encoding">',
+    '<soap:Envelope soap:encodingStyle="http://www.w3.org/2003/05/soap-encoding" xmlns:soap="http://www.w3.org/2003/05/soap-envelope/">',
     '  <soap:Header />',
     '  <soap:Body>',
     '    <complexAll>',

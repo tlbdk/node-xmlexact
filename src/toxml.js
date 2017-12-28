@@ -1,18 +1,11 @@
 // @ts-check
 'use strict'
 
-const defaultToXmlOptions = {
-  indentation: 2,
-  optimizeEmpty: true,
-  convertTypes: true,
-  validation: false,
-  xmlHeader: false
-}
+const ValidationError = require('./validationerror')
 
 function toXml(obj, rootName, definition = {}, options = {}) {
   let value = obj[rootName]
-  let currentOptions = { ...defaultToXmlOptions, ...options }
-  return _toXml(rootName, value, definition, currentOptions)
+  return _toXml(rootName, value, definition, options)
 }
 
 function _toXml(key, value, definition, options, level = 0) {
@@ -34,11 +27,15 @@ function _toXml(key, value, definition, options, level = 0) {
 
   // Array is at same level as current
   if (type === 'array') {
-    if (options.validation) validateXmlType(value, xmlType, length, true)
+    if (options.validation) validateXmlType(value, xmlType, length)
     for (let itemValue of value) {
       xmlResult += _toXml(key, itemValue, definition, options, level)
     }
     return xmlResult
+  } else if (getType(xmlType) === 'array' && options.validation) {
+    throw new ValidationError(
+      `Expected ${key} to be of type array found ${type}`
+    )
   }
 
   // Copy over defined attributes
@@ -49,12 +46,13 @@ function _toXml(key, value, definition, options, level = 0) {
     let attributeValue = definitionAttributes[attributeName]
     let attributeType = definitionAttributes[attributeName + '$type']
     if (options.validation) {
-      validateXmlType(attributeValue, xmlType, length, false)
+      validateXmlType(attributeValue, xmlType, length)
     }
     attributes[attributeName] = _formatXmlOutput(
       attributeValue,
       attributeType,
-      options.convertTypes
+      options,
+      level
     )
   }
 
@@ -71,15 +69,15 @@ function _toXml(key, value, definition, options, level = 0) {
       if (objectKey === '$') {
         let objectValue = value[objectKey]
         if (options.validation) {
-          validateXmlType(objectValue, xmlType, length, false)
+          validateXmlType(objectValue, xmlType, length)
         }
-        prefix += _formatXmlOutput(objectValue, xmlType, options.convertTypes)
+        prefix += _formatXmlOutput(objectValue, xmlType, options, level)
       } else if (objectKey === '$$') {
         let objectValue = value[objectKey]
         if (options.validation) {
-          validateXmlType(objectValue, xmlType, length, false)
+          validateXmlType(objectValue, xmlType, length)
         }
-        postfix += _formatXmlOutput(objectValue, xmlType, options.convertTypes)
+        postfix += _formatXmlOutput(objectValue, xmlType, options, level)
       } else if (options.validation && xmlType) {
         // TODO(Error): does not have $ or $$ set but has xmlType
       } else if (objectKey === 'namespace$') {
@@ -89,12 +87,13 @@ function _toXml(key, value, definition, options, level = 0) {
         let attributeValue = value[objectKey]
         let attributeType = definitionAttributes[objectKey.substr(1) + '$type']
         if (options.validation) {
-          validateXmlType(attributeValue, xmlType, length, false)
+          validateXmlType(attributeValue, xmlType, length)
         }
         attributes[objectKey.substr(1)] = _formatXmlOutput(
           attributeValue,
           attributeType,
-          options.convertTypes
+          options,
+          level
         )
       } else if (objectKey.indexOf('$') > 0) {
         // Skip definition information such as order
@@ -117,12 +116,12 @@ function _toXml(key, value, definition, options, level = 0) {
     )
   } else {
     if (options.validation) {
-      validateXmlType(value, xmlType, length, false)
+      validateXmlType(value, xmlType, length)
     }
     xmlResult += generateXml(
       namespace ? `${namespace}:${key.replace(/^.+?:/, '')}` : key,
       attributes,
-      _formatXmlOutput(value, xmlType, options.convertTypes),
+      _formatXmlOutput(value, xmlType, options, level),
       level * options.indentation,
       options
     )
@@ -173,7 +172,12 @@ function sortByList(list, order) {
   })
 }
 
-function validateXmlType(value, xmlType, length, array = false) {
+function validateXmlType(value, xmlType, length) {
+  let type = getType(value)
+  if (type === 'array') {
+  }
+
+  console.log('')
   // TODO: Validate type and length
 }
 
@@ -195,14 +199,21 @@ function getType(val) {
   }
 }
 
-function _formatXmlOutput(value, xmlType, convertType = true) {
-  // TODO: Handle no type defined
+function _formatXmlOutput(value, xmlType, options, level = 0) {
+  if (value === undefined || value === null) {
+    return ''
+  }
+  if (options.convertTypes !== true) {
+    return value
+  }
+
   if (Array.isArray(xmlType)) {
     xmlType = xmlType[0]
   }
 
-  if (value === undefined || value === null) {
-    return ''
+  if (xmlType === 'xml') {
+    let whitespace = ' '.repeat(options.indentation * (level + 1))
+    return `\n${whitespace}${value.replace(/\n/g, `\n${whitespace}`)}\n`
   } else if (xmlType === 'base64Binary') {
     return Buffer.from(value).toString('base64')
   } else if (xmlType === 'hexBinary') {
@@ -239,4 +250,4 @@ function xmlEscapeValue(value) {
   }
 }
 
-module.exports = { toXml }
+module.exports = toXml

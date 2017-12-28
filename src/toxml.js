@@ -109,10 +109,11 @@ function _toXml(key, value, definition, options, level = 0) {
     }
     xmlResult += generateXml(
       namespace ? `${namespace}:${key.replace(/^.+?:/, '')}` : key,
+      'xml',
       attributes,
       subResult === '' ? prefix + postfix : `\n${prefix}${subResult}${postfix}`,
-      level * options.indentation,
-      options
+      options,
+      level
     )
   } else {
     if (options.validation) {
@@ -120,17 +121,18 @@ function _toXml(key, value, definition, options, level = 0) {
     }
     xmlResult += generateXml(
       namespace ? `${namespace}:${key.replace(/^.+?:/, '')}` : key,
+      xmlType,
       attributes,
       _formatXmlOutput(value, xmlType, options, level),
-      level * options.indentation,
-      options
+      options,
+      level
     )
   }
   return xmlResult
 }
 
-function generateXml(elementName, attributes, value, indentation, options) {
-  let whitespace = ' '.repeat(indentation)
+function generateXml(elementName, xmlType, attributes, value, options, level) {
+  let whitespace = ' '.repeat(options.indentation * level)
   let result = ''
 
   // Write <xml attrib=...>
@@ -142,13 +144,12 @@ function generateXml(elementName, attributes, value, indentation, options) {
 
   if (value === '' && options.optimizeEmpty) {
     // <xml />
-    result += ` />${indentation ? '\n' : ''}`
+    result += ` />${options.indentation * level ? '\n' : ''}`
   } else {
     // ...</xml>
     result += `>${value}`
-    result +=
-      typeof value === 'string' && value.indexOf('\n') >= 0 ? whitespace : ''
-    result += `</${elementName}>${indentation ? '\n' : ''}`
+    result += xmlType === 'xml' && value.indexOf('\n') >= 0 ? whitespace : ''
+    result += `</${elementName}>${options.indentation * level ? '\n' : ''}`
   }
 
   return result

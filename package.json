@@ -17,7 +17,7 @@
     "url": "git+https://github.com/tlbdk/node-xmlexact.git"
   },
   "dependencies": {
-    "node-expat": "git@github.com:tlbdk/node-expat.git#node10-build-fix"
+    "node-expat": "https://github.com/tlbdk/node-expat.git#node10-build-fix"
   },
   "devDependencies": {
     "@types/node": "^10.5.6",

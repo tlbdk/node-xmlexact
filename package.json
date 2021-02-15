@@ -10,7 +10,8 @@
   "homepage": "https://github.com/tlbdk/node-xmlexact#readme",
   "main": "src/xmlexact.js",
   "scripts": {
-    "test": "istanbul test _mocha -- -R spec"
+    "test": "mocha",
+    "coverage": "nyc npm run test"
   },
   "repository": {
     "type": "git",

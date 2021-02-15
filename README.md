@@ -4,53 +4,53 @@ XmlExact simplifies working with complex XML documents from JavaScript without t
 
 ##  Introduction
 
-Working with XML documents can be a pain as the legacy of 20 years of over-engineering can quickly be felt. Typical XML 
-documents requires you to understand the many overcomplicated standards(XML, XSD, WSDL, XPath, etc.) and the tooling 
-that was supposed to help you, bothers you with details that forces you to spend more time on pleasing the XML 
+Working with XML documents can be a pain as the legacy of 20 years of over-engineering can quickly be felt. Typical XML
+documents requires you to understand the many overcomplicated standards(XML, XSD, WSDL, XPath, etc.) and the tooling
+that was supposed to help you, bothers you with details that forces you to spend more time on pleasing the XML
 parser/generator instead of actually getting the job of converting your data to and from XML.
 
-XmlExact approach to solving this is by only caring about how the XML will look both as XML and as JavaScript objects. 
+XmlExact approach to solving this is by only caring about how the XML will look both as XML and as JavaScript objects.
 Schema validation, XPath queries, namespace specification and other painful stuff is left for other libraries.
 
-To do this XmlExact needs a simple document definition that describes the order, where attributes and namespace 
-should be inject and if it should do simple type conversion. This document definition can be written by hand, 
+To do this XmlExact needs a simple document definition that describes the order, where attributes and namespace
+should be inject and if it should do simple type conversion. This document definition can be written by hand,
 constructed from existing XML, or by using tools that convert WSDL/XSD to the format.
 
-The reason XMLExact was created was to build a SOAP client that can generate SOAP for a number of picky and broken SOAP 
-implementations, this work is still in progress, but a POC can be found here: 
-[WSDLUtils](https://github.com/tlbdk/wsdl2ts/blob/master/src/wsdlutils.js) 
+The reason XMLExact was created was to build a SOAP client that can generate SOAP for a number of picky and broken SOAP
+implementations, this work is still in progress, but a POC can be found here:
+[WSDLUtils](https://github.com/tlbdk/wsdl2ts/blob/master/src/wsdlutils.js)
 
 ## Installation
 
 ``` bash
-$ npm install xml-exact
+$ npm install xmlexact
 ```
 
 ## Features
 
 * Construct complex XML documents from simple JavaScript object
-* Keep XML document definition separately from data 
+* Keep XML document definition separately from data
 * Ensure element order
 * Type conversion between XSD XML and node types
   * array -> array
   * boolean -> boolean
   * decimal, double, float -> number
   * byte, short, int, integer, long -> number
-  * negativeInteger, nonNegativeInteger, nonPositiveInteger -> number 
+  * negativeInteger, nonNegativeInteger, nonPositiveInteger -> number
   * unsignedByte, unsignedShort, unsignedInt, unsignedLong -> number
   * base64Binary, hexBinary -> Buffer
 * Generate sample JavasScript objects based on the definition
 
 ## Limitation
 
-* Only works in NodeJS as it depends on node-expat(libexpat) for XML parsing (pull requests to add other web safe XML 
+* Only works in NodeJS as it depends on node-expat(libexpat) for XML parsing (pull requests to add other web safe XML
 parses will be very welcome)
 * Does not handle cases with namespace collision
 
 ## Example of usage
 
 ``` JavaScript
-var xmlExact = require('xml-exact');
+var xmlExact = require('xmlexact');
 
 var definition = {
   Envelope$namespace: "soap",
@@ -116,7 +116,7 @@ Output of xml:
 ``` JavaScript
 {
     element$namespace: "soap", // Set the namespace on "element"
-    element$attributes: { // Set two attributes on "element" 
+    element$attributes: { // Set two attributes on "element"
         "xmlns:soap": "http://www.w3.org/2003/05/soap-envelope/",
         "customAttibute": "1234",
     },
@@ -138,7 +138,7 @@ Supported types:
 * boolean -> boolean
 * decimal, double, float -> number
 * byte, short, int, integer, long -> number
-* negativeInteger, nonNegativeInteger, nonPositiveInteger -> number 
+* negativeInteger, nonNegativeInteger, nonPositiveInteger -> number
 * unsignedByte, unsignedShort, unsignedInt, unsignedLong -> number
 * base64Binary, hexBinary -> Buffer
 
@@ -163,12 +163,12 @@ Parameters:
 Parameters:
 
 * xml: XML to be convert to JavaScript object
-* definition: definition used to build the JavaScript object 
+* definition: definition used to build the JavaScript object
 * options: Options when building JavaScript object
   * indentation: Set indentation level for xml output, default is 2
   * convertTypes: Convert types based on the information in the definition, default is true
   * inlineAttributes: Inline attributes in the object by prepending $, default is true
-  
+
 ### generateDefinition(xml, [type, namespaces]);
 
 * xml: XML document (XML sample or XSD)
@@ -217,7 +217,7 @@ Output of xml:
 ## Generating definitions
 
 The generator does some guess work to generate the definition and might not always find the right types, fx. in case of
-base64Binary where it could also be a string.  
+base64Binary where it could also be a string.
 
 ``` JavaScript
 let generatedDefinition = xmlExact.generateDefinition(sampleXml);
